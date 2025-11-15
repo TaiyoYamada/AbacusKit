@@ -9,10 +9,88 @@ AbacusKitは、iOS/iPadアプリケーション向けのリアルタイム推論
 AbacusKitの設計は以下の原則に基づいています：
 
 1. **Layered Architecture**: 関心の分離による保守性の向上
-2. **Swift Concurrency**: async/awaitとActorによる安全な非同期処理
-3. **Performance First**: C++層でのTensor変換による高速化
-4. **Offline-First**: 初回ダウンロード後はオフラインでも動作
-5. **Type Safety**: Swift 6の厳格な型システムとSendable準拠
+2. **Target Separation**: Swift と C++ の明確な分離
+3. **Swift Concurrency**: async/awaitとActorによる安全な非同期処理
+4. **Performance First**: C++層でのTensor変換による高速化
+5. **Offline-First**: 初回ダウンロード後はオフラインでも動作
+6. **Type Safety**: Swift 6の厳格な型システムとSendable準拠
+
+## Target Architecture
+
+AbacusKitは2つの独立したターゲットで構成されています：
+
+### Target 1: AbacusKit (Swift)
+
+Swift のみで実装されたメインSDKターゲット。
+
+```
+AbacusKit (Swift Target)
+├── Core Layer
+│   ├── Abacus.swift          # Main SDK interface
+│   ├── AbacusConfig.swift    # Configuration
+│   └── AbacusError.swift     # Error types
+├── ML Layer
+│   └── Preprocessor.swift    # Input validation
+├── Networking Layer
+│   ├── VersionChecker.swift  # S3 version check
+│   └── ModelDownloader.swift # Model download
+├── Storage Layer
+│   ├── ModelCache.swift      # Model metadata cache
+│   └── FileStorage.swift     # File operations
+├── Domain Layer
+│   ├── PredictionResult.swift
+│   ├── ModelVersion.swift
+│   └── AbacusMetadata.swift
+└── Utils Layer
+    ├── Logger.swift
+    └── ImageUtils.swift
+```
+
+### Target 2: AbacusKitBridge (Objective-C++/C++)
+
+LibTorch との統合を担当するブリッジターゲット。
+
+```
+AbacusKitBridge (ObjC++/C++ Target)
+├── include/
+│   └── TorchModule.h         # Public ObjC header
+├── TorchModule.mm            # ObjC++ bridge implementation
+├── TorchModule.hpp           # C++ header
+└── TorchModule.cpp           # C++ implementation (LibTorch)
+```
+
+### Why Separate Targets?
+
+Swift Package Manager は、Swift と Objective-C++/C++ を同一ターゲット内で混在させることをサポートしていません。
+
+**問題:**
+```
+❌ AbacusKit (Single Target)
+   ├── Abacus.swift           # Swift
+   ├── TorchModule.mm         # Objective-C++
+   └── TorchModule.cpp        # C++
+   
+   → Build Error: "Cannot use Objective-C++ with Swift in the same target"
+```
+
+**解決策:**
+```
+✅ AbacusKit (Swift Target)
+   └── Abacus.swift           # Swift only
+
+✅ AbacusKitBridge (ObjC++/C++ Target)
+   ├── TorchModule.mm         # Objective-C++
+   └── TorchModule.cpp        # C++
+   
+   → AbacusKit depends on AbacusKitBridge
+```
+
+**メリット:**
+- ✅ SPM のビルドエラーを回避
+- ✅ 明確な責任分離（Swift = ビジネスロジック、C++ = ML実行）
+- ✅ Swift と C++ の境界が明確
+- ✅ 保守性の向上
+- ✅ テストの容易性
 
 ## 6-Layer Architecture
 
@@ -27,28 +105,35 @@ AbacusKitは以下の6つの層で構成されています：
 ┌─────────────────────────────────────────────────────────┐
 │         Core Layer (Public API)                         │
 │   Abacus, AbacusConfig, AbacusError                     │
+│   [AbacusKit Target - Swift]                            │
 └─────────────────────────────────────────────────────────┘
          ↓                  ↓                  ↓
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
 │  ML Layer    │  │  Networking  │  │   Storage    │
-│ TorchModule  │  │VersionChecker│  │ ModelCache   │
-│ Preprocessor │  │ModelDownloader│  │ FileStorage  │
-└──────────────┘  └──────────────┘  └──────────────┘
+│ Preprocessor │  │VersionChecker│  │ ModelCache   │
+│   [Swift]    │  │ModelDownloader│  │ FileStorage  │
+│      +       │  │   [Swift]    │  │   [Swift]    │
+│ TorchModule  │  └──────────────┘  └──────────────┘
+│ [ObjC++/C++] │
+│  (Bridge)    │
+└──────────────┘
          ↓                  ↓                  ↓
 ┌─────────────────────────────────────────────────────────┐
 │         Domain Layer (Models)                           │
 │   PredictionResult, ModelVersion, AbacusMetadata        │
+│   [AbacusKit Target - Swift]                            │
 └─────────────────────────────────────────────────────────┘
          ↓
 ┌─────────────────────────────────────────────────────────┐
 │         Utils Layer                                     │
 │      ImageUtils, Logger                                 │
+│   [AbacusKit Target - Swift]                            │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Layer Descriptions
 
-#### 1. Core Layer
+#### 1. Core Layer (Swift)
 
 公開APIを提供する最上位層です。アプリケーション開発者が直接使用するインターフェースを定義します。
 
@@ -61,24 +146,36 @@ AbacusKitは以下の6つの層で構成されています：
 - SDK初期化とモデル読み込み
 - 推論実行の調整
 - エラーハンドリングと伝播
+- AbacusKitBridge との連携
 
+**Target**: AbacusKit (Swift)
 
-#### 2. ML Layer
+#### 2. ML Layer (Swift + Bridge)
 
-機械学習モデルの実行を担当する層です。C++とObjective-C++を使用してLibTorchと統合します。
+機械学習モデルの実行を担当する層です。Swift と C++ の2つのコンポーネントで構成されます。
 
-**Components:**
-- `TorchModule.h/mm`: Objective-C++ブリッジ
-- `TorchModule.hpp/cpp`: C++実装（LibTorch統合）
+**Swift Component (AbacusKit Target):**
 - `Preprocessor.swift`: 入力検証
 
-**Responsibilities:**
-- TorchScriptモデルの読み込み
-- CVPixelBufferからTensorへの変換（C++層）
-- モデル推論の実行
-- 出力Tensorの解析
+**Bridge Component (AbacusKitBridge Target):**
+- `TorchModule.h`: Objective-C ブリッジヘッダー（public）
+- `TorchModule.mm`: Objective-C++ 実装
+- `TorchModule.hpp`: C++ ヘッダー
+- `TorchModule.cpp`: C++ 実装（LibTorch統合）
 
-#### 3. Networking Layer
+**Responsibilities:**
+- CVPixelBuffer の形式検証（Swift）
+- TorchScriptモデルの読み込み（C++）
+- CVPixelBufferからTensorへの変換（C++）
+- モデル推論の実行（C++）
+- 出力Tensorの解析（C++）
+
+**Data Flow:**
+```
+Swift (Preprocessor) → ObjC++ (Bridge) → C++ (LibTorch) → ObjC++ → Swift
+```
+
+#### 3. Networking Layer (Swift)
 
 S3からのモデル更新を管理する層です。
 
@@ -91,7 +188,9 @@ S3からのモデル更新を管理する層です。
 - モデルファイルのダウンロード
 - ネットワークエラーハンドリング
 
-#### 4. Storage Layer
+**Target**: AbacusKit (Swift)
+
+#### 4. Storage Layer (Swift)
 
 ローカルファイルシステムとの相互作用を管理する層です。
 
@@ -104,7 +203,9 @@ S3からのモデル更新を管理する層です。
 - モデルURLとバージョンのキャッシュ
 - UserDefaultsへの永続化
 
-#### 5. Domain Layer
+**Target**: AbacusKit (Swift)
+
+#### 5. Domain Layer (Swift)
 
 ビジネスロジックで使用されるデータモデルを定義する層です。
 
@@ -118,7 +219,9 @@ S3からのモデル更新を管理する層です。
 - Codable準拠（JSON変換）
 - Sendable準拠（並行性安全性）
 
-#### 6. Utils Layer
+**Target**: AbacusKit (Swift)
+
+#### 6. Utils Layer (Swift)
 
 共通ユーティリティ機能を提供する層です。
 
@@ -131,6 +234,7 @@ S3からのモデル更新を管理する層です。
 - ピクセルバッファ検証
 - 条件付きログ出力（DEBUG時のみ）
 
+**Target**: AbacusKit (Swift)
 
 ## Data Flow Diagrams
 
@@ -145,13 +249,15 @@ S3からのモデル更新を管理する層です。
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  2. Abacus.predict(pixelBuffer:)                        │
+│  2. Abacus.predict(pixelBuffer:) [Swift]                │
+│     Target: AbacusKit                                   │
 │     - Check if model is loaded                          │
 │     - Measure start time                                │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  3. Preprocessor.validate()                             │
+│  3. Preprocessor.validate() [Swift]                     │
+│     Target: AbacusKit                                   │
 │     - Verify pixel format (BGRA/RGBA)                   │
 │     - Check buffer dimensions                           │
 │     - Throw error if invalid                            │
@@ -159,13 +265,14 @@ S3からのモデル更新を管理する層です。
                          ↓
 ┌─────────────────────────────────────────────────────────┐
 │  4. TorchModuleBridge.predictWithPixelBuffer()          │
-│     (Objective-C++ Bridge)                              │
+│     Target: AbacusKitBridge (Objective-C++)             │
+│     - Swift → ObjC++ boundary crossing                  │
 │     - Pass CVPixelBuffer to C++ layer                   │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  5. TorchModuleCpp::predict()                           │
-│     (C++ Implementation)                                │
+│  5. TorchModuleCpp::predict() [C++]                     │
+│     Target: AbacusKitBridge                             │
 │     a. Lock CVPixelBuffer                               │
 │     b. Extract raw pixel data                           │
 │     c. Convert to torch::Tensor                         │
@@ -179,12 +286,15 @@ S3からのモデル更新を管理する層です。
                          ↓
 ┌─────────────────────────────────────────────────────────┐
 │  6. TorchModuleBridge → Swift                           │
+│     Target: AbacusKitBridge → AbacusKit                 │
 │     - Convert vector<float> to NSArray<NSNumber>        │
 │     - Handle C++ exceptions → NSError                   │
+│     - ObjC++ → Swift boundary crossing                  │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  7. Abacus.predict() completion                         │
+│  7. Abacus.predict() completion [Swift]                 │
+│     Target: AbacusKit                                   │
 │     - Calculate inference time                          │
 │     - Parse output array                                │
 │     - Create PredictionResult                           │
@@ -203,22 +313,24 @@ S3からのモデル更新を管理する層です。
 
 **Key Points:**
 - 入力検証はSwift層（Preprocessor）で実行
-- Tensor変換と推論はC++層で実行（パフォーマンス最適化）
+- Tensor変換と推論はC++層（AbacusKitBridge）で実行（パフォーマンス最適化）
+- Swift ↔ ObjC++ の境界は2回のみ（最小化）
 - エラーはC++ → Objective-C++ → Swiftと伝播
-
 
 ### Model Update Flow
 
-モデル更新時のデータフローを示します：
+モデル更新時のデータフローを示します（すべて Swift 層で完結）：
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  1. App Launch / Manual Trigger                         │
-│     Abacus.configure(config:)                           │
+│     Abacus.configure(config:) [Swift]                   │
+│     Target: AbacusKit                                   │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  2. VersionChecker.fetchRemoteVersion()                 │
+│  2. VersionChecker.fetchRemoteVersion() [Swift]         │
+│     Target: AbacusKit                                   │
 │     - HTTP GET to S3 version.json                       │
 │     - URLSession with async/await                       │
 └─────────────────────────────────────────────────────────┘
@@ -233,12 +345,14 @@ S3からのモデル更新を管理する層です。
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  4. Decode to ModelVersion                              │
+│  4. Decode to ModelVersion [Swift]                      │
+│     Target: AbacusKit                                   │
 │     - JSON → Swift struct (Codable)                     │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  5. Compare with ModelCache.currentVersion              │
+│  5. Compare with ModelCache.currentVersion [Swift]      │
+│     Target: AbacusKit                                   │
 │     - Actor-isolated read                               │
 │     - Check if remote version > local version           │
 └─────────────────────────────────────────────────────────┘
@@ -248,10 +362,12 @@ S3からのモデル更新を管理する層です。
 ┌──────────────────┐          ┌──────────────────┐
 │  Same Version    │          │  Newer Version   │
 │  Skip Download   │          │  Download Model  │
+│    [Swift]       │          │    [Swift]       │
 └──────────────────┘          └──────────────────┘
          ↓                               ↓
          │              ┌─────────────────────────────────┐
          │              │  6. ModelDownloader.download()  │
+         │              │     Target: AbacusKit [Swift]   │
          │              │     - HTTP GET model.pt         │
          │              │     - Save to temp location     │
          │              │     - Validate file size        │
@@ -259,6 +375,7 @@ S3からのモデル更新を管理する層です。
          │                               ↓
          │              ┌─────────────────────────────────┐
          │              │  7. FileStorage operations      │
+         │              │     Target: AbacusKit [Swift]   │
          │              │     - Move to final location    │
          │              │     - Atomic file replacement   │
          │              │     - Delete old model          │
@@ -266,6 +383,7 @@ S3からのモデル更新を管理する層です。
          │                               ↓
          │              ┌─────────────────────────────────┐
          │              │  8. ModelCache.update()         │
+         │              │     Target: AbacusKit [Swift]   │
          │              │     - Store new URL & version   │
          │              │     - Persist to UserDefaults   │
          │              └─────────────────────────────────┘
@@ -274,6 +392,7 @@ S3からのモデル更新を管理する層です。
                             ↓
 ┌─────────────────────────────────────────────────────────┐
 │  9. TorchModuleBridge.loadModelAtPath()                 │
+│     Target: AbacusKitBridge [ObjC++]                    │
 │     - Load TorchScript model into memory                │
 │     - Set model to eval mode                            │
 └─────────────────────────────────────────────────────────┘
@@ -285,17 +404,17 @@ S3からのモデル更新を管理する層です。
 ```
 
 **Key Points:**
-- バージョンチェックは毎回実行（軽量なJSON取得）
-- ダウンロードは新しいバージョンがある場合のみ
+- バージョンチェックとダウンロードは Swift 層で完結
+- C++ 層（AbacusKitBridge）はモデル読み込みのみ担当
 - ファイル操作はアトミック（破損防止）
-- キャッシュ情報はUserDefaultsに永続化（アプリ再起動後も有効）
+- キャッシュ情報はUserDefaultsに永続化
 
 
 ## C++ Tensor Conversion Rationale
 
 ### Why C++ for Tensor Operations?
 
-AbacusKitでは、CVPixelBufferからTensorへの変換をC++層で実行しています。この設計判断には以下の理由があります：
+AbacusKitでは、CVPixelBufferからTensorへの変換を C++ 層（AbacusKitBridge）で実行しています。この設計判断には以下の理由があります：
 
 #### 1. Performance
 
@@ -327,7 +446,7 @@ C++層での変換により、以下のメモリ効率が実現されます：
 - **Automatic Memory Management**: torch::Tensorの自動メモリ管理
 
 ```cpp
-// C++での効率的な変換例
+// AbacusKitBridge/TorchModule.cpp での効率的な変換
 void* TorchModuleCpp::pixelBufferToTensor(CVPixelBufferRef pixelBuffer) {
     CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
     
@@ -377,11 +496,13 @@ LibTorchはC++ライブラリであり、C++から使用するのが最も自然
 - ✅ 高速な推論パフォーマンス
 - ✅ メモリ効率の向上
 - ✅ LibTorchの全機能へのアクセス
+- ✅ 明確なターゲット分離（SPM準拠）
 
 **欠点:**
 - ❌ Objective-C++ブリッジの複雑性
 - ❌ デバッグの難しさ（Swift ↔ C++境界）
 - ❌ ビルド設定の複雑化
+- ❌ 2つのターゲット管理が必要
 
 ### Alternative Approaches Considered
 
@@ -401,13 +522,73 @@ struct TensorConverter {
 ```
 **却下理由**: パフォーマンスオーバーヘッドが大きい
 
-#### Approach 3: Current Approach (C++ Layer)
+#### Approach 3: Current Approach (Separate C++ Target)
 ```cpp
-// C++層で直接変換
+// AbacusKitBridge ターゲットで直接変換
 std::vector<float> TorchModuleCpp::predict(CVPixelBufferRef pixelBuffer)
 ```
-**採用理由**: パフォーマンスとメモリ効率のバランスが最適
+**採用理由**: パフォーマンス、メモリ効率、SPM準拠のバランスが最適
 
+## Package.swift Configuration
+
+### Target Structure
+
+```swift
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "AbacusKit",
+    platforms: [.iOS(.v17)],
+    products: [
+        .library(name: "AbacusKit", targets: ["AbacusKit"]),
+    ],
+    targets: [
+        // Swift Target
+        .target(
+            name: "AbacusKit",
+            dependencies: ["AbacusKitBridge"],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
+        
+        // Objective-C++/C++ Bridge Target
+        .target(
+            name: "AbacusKitBridge",
+            dependencies: [],
+            publicHeadersPath: "include",
+            cxxSettings: [
+                .unsafeFlags(["-std=c++17"]),
+            ]
+        ),
+        
+        // Test Target
+        .testTarget(
+            name: "AbacusKitTests",
+            dependencies: ["AbacusKit"]
+        ),
+    ],
+    cxxLanguageStandard: .cxx17
+)
+```
+
+### Key Configuration Points
+
+1. **Target Dependencies**:
+   - `AbacusKit` depends on `AbacusKitBridge`
+   - `AbacusKitBridge` has no dependencies (standalone)
+
+2. **Public Headers**:
+   - `publicHeadersPath: "include"` で TorchModule.h を公開
+   - Swift から `import AbacusKitBridge` でアクセス可能
+
+3. **C++ Standard**:
+   - `cxxLanguageStandard: .cxx17` でパッケージ全体に適用
+   - LibTorch は C++17 を要求
+
+4. **Swift Settings**:
+   - `StrictConcurrency` で Swift 6 の並行性チェックを有効化
 
 ## Concurrency Model
 
@@ -479,7 +660,7 @@ public func configure(config: AbacusConfig) async throws {
 - **Actor Isolation**: 共有状態への排他的アクセス
 - **Sendable Types**: データ競合の防止
 - **Structured Concurrency**: タスクのライフサイクル管理
-
+- **C++ Layer**: Swift の並行性モデルから独立（同期的に実行）
 
 ## Error Handling Strategy
 
@@ -533,7 +714,6 @@ public enum AbacusError: Error, LocalizedError {
 | `invalidModel` | Use bundled fallback model (future) |
 | `inferenceFailed` | Log and skip frame, continue processing |
 | `preprocessingFailed` | Validate input format before calling |
-
 
 ## Testing Strategy
 
@@ -591,14 +771,25 @@ class MockTorchModule: TorchModuleBridge {
 }
 ```
 
-### Integration Tests (Future)
+### Bridge Layer Testing
 
-実際のモデルとネットワークを使用したエンドツーエンドテスト：
+AbacusKitBridge のテストは、実際の LibTorch バイナリが必要です：
 
-- S3からの実際のダウンロード（テストバケット使用）
-- 実際のTorchScriptモデルでの推論
-- パフォーマンスベンチマーク
-
+```swift
+// Integration test with real LibTorch
+final class TorchModuleBridgeTests: XCTestCase {
+    func testLoadModelSucceeds() throws {
+        let bridge = TorchModuleBridge()
+        let modelPath = Bundle.module.path(forResource: "test_model", ofType: "pt")!
+        
+        var error: NSError?
+        let success = bridge.loadModel(atPath: modelPath, error: &error)
+        
+        XCTAssertTrue(success)
+        XCTAssertNil(error)
+    }
+}
+```
 
 ## Performance Optimization
 
@@ -623,7 +814,7 @@ let output = torchModule.predict(pixelBuffer)           // C++ handles all
 不要なコピーを避ける：
 
 ```cpp
-// ✅ Direct memory access
+// ✅ Direct memory access in AbacusKitBridge/TorchModule.cpp
 CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 void* baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
 
@@ -676,35 +867,6 @@ let config = URLSessionConfiguration.background(withIdentifier: "com.app.model-d
 let session = URLSession(configuration: config)
 ```
 
-### Memory Optimization
-
-#### 1. Lazy Loading
-
-モデルは必要になるまで読み込まない：
-
-```swift
-private var _torchModule: TorchModuleBridge?
-
-var torchModule: TorchModuleBridge {
-    if _torchModule == nil {
-        _torchModule = TorchModuleBridge()
-    }
-    return _torchModule!
-}
-```
-
-#### 2. Cache Management
-
-古いモデルファイルの削除：
-
-```swift
-func cleanupOldModels() throws {
-    let oldModelURL = // ... previous model URL
-    try fileStorage.deleteFile(at: oldModelURL)
-}
-```
-
-
 ## Security Considerations
 
 ### Network Security
@@ -722,18 +884,6 @@ public func configure(config: AbacusConfig) async throws {
 }
 ```
 
-#### Certificate Pinning (Future)
-
-```swift
-class PinnedURLSessionDelegate: NSObject, URLSessionDelegate {
-    func urlSession(_ session: URLSession,
-                   didReceive challenge: URLAuthenticationChallenge,
-                   completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        // Verify certificate
-    }
-}
-```
-
 ### Model Validation
 
 ダウンロードしたモデルの検証：
@@ -746,7 +896,7 @@ func validateModel(at url: URL) throws {
         throw AbacusError.invalidModel(reason: "Invalid file size")
     }
     
-    // 2. Format check (future: checksum verification)
+    // 2. Format check
     guard url.pathExtension == "pt" || url.pathExtension == "ptl" else {
         throw AbacusError.invalidModel(reason: "Invalid file format")
     }
@@ -758,260 +908,6 @@ func validateModel(at url: URL) throws {
 - **No Data Collection**: SDKはユーザーデータを収集・送信しない
 - **Local Processing**: すべての推論はデバイス上で実行
 - **Sandboxing**: モデルはアプリのサンドボックス内に保存
-
-### Secure Storage
-
-```swift
-// Store in app's document directory (sandboxed)
-let documentsURL = FileManager.default.urls(
-    for: .documentDirectory,
-    in: .userDomainMask
-)[0]
-
-let modelURL = documentsURL.appendingPathComponent("models/model.pt")
-```
-
-
-## Future Enhancements
-
-### Phase 2: Enhanced Functionality
-
-#### 1. Multiple Model Support
-
-複数のモデルを同時に管理：
-
-```swift
-public struct Abacus {
-    func configure(modelID: String, config: AbacusConfig) async throws
-    func predict(modelID: String, pixelBuffer: CVPixelBuffer) async throws -> PredictionResult
-}
-
-// Usage
-try await abacus.configure(modelID: "classifier", config: classifierConfig)
-try await abacus.configure(modelID: "detector", config: detectorConfig)
-
-let result1 = try await abacus.predict(modelID: "classifier", pixelBuffer: buffer)
-let result2 = try await abacus.predict(modelID: "detector", pixelBuffer: buffer)
-```
-
-#### 2. Model Compression
-
-量子化モデルのサポート：
-
-```swift
-public enum ModelPrecision {
-    case float32
-    case float16
-    case int8
-}
-
-public struct AbacusConfig {
-    let precision: ModelPrecision
-    // ...
-}
-```
-
-#### 3. Batch Inference
-
-複数フレームの一括処理：
-
-```swift
-func predict(pixelBuffers: [CVPixelBuffer]) async throws -> [PredictionResult] {
-    // Batch processing for efficiency
-}
-```
-
-#### 4. Progress Tracking
-
-ダウンロード進捗の監視：
-
-```swift
-func configure(config: AbacusConfig, 
-              progressHandler: @escaping (Double) -> Void) async throws {
-    // Report download progress
-}
-```
-
-### Phase 3: Advanced Features
-
-#### 1. Push Notifications for Updates
-
-モデル更新時の通知：
-
-```swift
-// Server sends push notification
-// App downloads model in background
-func application(_ application: UIApplication,
-                didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
-    if userInfo["type"] == "model_update" {
-        Task {
-            try await abacus.checkForUpdates()
-        }
-    }
-}
-```
-
-#### 2. User-Specific Models
-
-ユーザーIDに基づくモデル配信：
-
-```swift
-public struct AbacusConfig {
-    let userID: String
-    let versionURL: URL  // https://s3.../version.json?user_id={userID}
-}
-```
-
-#### 3. A/B Testing
-
-複数モデルバージョンの同時実行：
-
-```swift
-public struct ABTestConfig {
-    let modelA: AbacusConfig
-    let modelB: AbacusConfig
-    let splitRatio: Double  // 0.0 - 1.0
-}
-
-func predict(pixelBuffer: CVPixelBuffer, 
-            abTest: ABTestConfig) async throws -> PredictionResult {
-    // Randomly select model based on split ratio
-}
-```
-
-#### 4. Telemetry (Opt-in)
-
-使用状況の分析：
-
-```swift
-public struct TelemetryConfig {
-    let enabled: Bool
-    let endpoint: URL
-}
-
-// Collect metrics
-struct InferenceMetrics {
-    let inferenceTime: TimeInterval
-    let modelVersion: Int
-    let deviceModel: String
-    let timestamp: Date
-}
-```
-
-#### 5. On-Device Training (Future)
-
-デバイス上でのモデルファインチューニング：
-
-```swift
-func train(samples: [(CVPixelBuffer, Int)], 
-          epochs: Int) async throws {
-    // Fine-tune model on device
-}
-```
-
-### Phase 4: Platform Expansion
-
-#### 1. macOS Support
-
-```swift
-#if os(macOS)
-// macOS-specific implementations
-#endif
-```
-
-#### 2. visionOS Support
-
-Apple Vision Proでの3D推論：
-
-```swift
-#if os(visionOS)
-func predict(spatialBuffer: SpatialPixelBuffer) async throws -> PredictionResult
-#endif
-```
-
-#### 3. watchOS Support (Lightweight)
-
-Apple Watch向けの軽量版：
-
-```swift
-#if os(watchOS)
-// Simplified API for watchOS
-#endif
-```
-
-
-## Build Configuration
-
-### Package.swift
-
-```swift
-// swift-tools-version: 6.0
-import PackageDescription
-
-let package = Package(
-    name: "AbacusKit",
-    platforms: [
-        .iOS(.v17)
-    ],
-    products: [
-        .library(
-            name: "AbacusKit",
-            targets: ["AbacusKit"]
-        ),
-    ],
-    targets: [
-        .target(
-            name: "AbacusKit",
-            dependencies: [],
-            cxxSettings: [
-                .headerSearchPath("ML"),
-                .define("TORCH_MOBILE", to: "1"),
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency"),
-            ],
-            linkerSettings: [
-                .linkedFramework("CoreVideo"),
-                .linkedFramework("CoreGraphics"),
-                .linkedFramework("Accelerate"),
-            ]
-        ),
-        .testTarget(
-            name: "AbacusKitTests",
-            dependencies: ["AbacusKit"]
-        ),
-    ],
-    cxxLanguageStandard: .cxx17
-)
-```
-
-### Xcode Build Settings
-
-プロジェクトに以下の設定が必要です：
-
-```
-CLANG_CXX_LANGUAGE_STANDARD = c++17
-CLANG_ENABLE_OBJC_ARC = YES
-SWIFT_VERSION = 6.0
-IPHONEOS_DEPLOYMENT_TARGET = 17.0
-
-# LibTorch linking
-OTHER_LDFLAGS = -all_load
-FRAMEWORK_SEARCH_PATHS = $(PROJECT_DIR)/Frameworks
-```
-
-### LibTorch Integration
-
-1. LibTorchフレームワークをダウンロード
-2. プロジェクトの`Frameworks/`ディレクトリに配置
-3. Build Phasesで`LibTorch.framework`をリンク
-
-```bash
-# Download LibTorch for iOS
-wget https://download.pytorch.org/libtorch/ios/libtorch_ios_2.0.0.zip
-unzip libtorch_ios_2.0.0.zip -d Frameworks/
-```
-
 
 ## Debugging and Logging
 
@@ -1041,20 +937,10 @@ struct Logger {
 }
 ```
 
-### Usage
-
-```swift
-// In Abacus.swift
-Logger.log("Configuring SDK with version URL: \(config.versionURL)", level: .info)
-Logger.log("Model loaded successfully", level: .info)
-Logger.log("Inference completed in \(inferenceTime)ms", level: .debug)
-Logger.log("Failed to download model: \(error)", level: .error)
-```
-
 ### Debugging C++ Layer
 
 ```cpp
-// In TorchModule.cpp
+// In AbacusKitBridge/TorchModule.cpp
 #ifdef DEBUG
 #include <iostream>
 #define LOG_DEBUG(msg) std::cout << "[C++] " << msg << std::endl
@@ -1075,22 +961,60 @@ std::vector<float> TorchModuleCpp::predict(CVPixelBufferRef pixelBuffer) {
 }
 ```
 
-### Performance Profiling
+## Future Enhancements
 
-Instrumentsを使用したプロファイリング：
+### Phase 2: Enhanced Functionality
 
-1. **Time Profiler**: 推論時間の測定
-2. **Allocations**: メモリ使用量の追跡
-3. **Leaks**: メモリリークの検出
+#### 1. Multiple Model Support
+
+複数のモデルを同時に管理：
 
 ```swift
-// Measure inference time
-let start = CFAbsoluteTimeGetCurrent()
-let result = try await abacus.predict(pixelBuffer: buffer)
-let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000
-Logger.log("Inference took \(elapsed)ms", level: .debug)
+public struct Abacus {
+    func configure(modelID: String, config: AbacusConfig) async throws
+    func predict(modelID: String, pixelBuffer: CVPixelBuffer) async throws -> PredictionResult
+}
 ```
 
+#### 2. Model Compression
+
+量子化モデルのサポート：
+
+```swift
+public enum ModelPrecision {
+    case float32
+    case float16
+    case int8
+}
+```
+
+#### 3. Batch Inference
+
+複数フレームの一括処理：
+
+```swift
+func predict(pixelBuffers: [CVPixelBuffer]) async throws -> [PredictionResult]
+```
+
+### Phase 3: Platform Expansion
+
+#### 1. macOS Support
+
+```swift
+#if os(macOS)
+// macOS-specific implementations
+#endif
+```
+
+#### 2. visionOS Support
+
+Apple Vision Proでの3D推論：
+
+```swift
+#if os(visionOS)
+func predict(spatialBuffer: SpatialPixelBuffer) async throws -> PredictionResult
+#endif
+```
 
 ## Deployment Considerations
 
@@ -1125,13 +1049,6 @@ iOS 17以降、プライバシーマニフェストが必要：
 }
 ```
 
-#### 3. Export Compliance
-
-機械学習モデルの輸出規制を確認：
-
-- 暗号化機能を使用していない場合は通常問題なし
-- 特定の国への配信制限を確認
-
 ### Production Checklist
 
 - [ ] LibTorchバイナリが正しくリンクされている
@@ -1144,33 +1061,13 @@ iOS 17以降、プライバシーマニフェストが必要：
 - [ ] エラーハンドリングの網羅性確認
 - [ ] ログ出力の本番環境での無効化確認
 
-### Monitoring
-
-本番環境での監視項目：
-
-```swift
-// Crash reporting
-func reportCrash(_ error: Error) {
-    // Send to crash reporting service
-}
-
-// Performance monitoring
-struct PerformanceMetrics {
-    let averageInferenceTime: TimeInterval
-    let modelLoadTime: TimeInterval
-    let downloadTime: TimeInterval
-    let errorRate: Double
-}
-```
-
-
 ## Conclusion
 
 AbacusKitは、パフォーマンス、保守性、安全性のバランスを取った設計になっています。
 
 ### Key Architectural Decisions
 
-1. **6-Layer Architecture**: 明確な責任分離による保守性
+1. **2-Target Architecture**: Swift と C++ の明確な分離（SPM準拠）
 2. **C++ Tensor Conversion**: パフォーマンス最適化
 3. **Swift 6 Concurrency**: 型安全な並行処理
 4. **Offline-First**: ネットワーク依存の最小化
@@ -1180,6 +1077,7 @@ AbacusKitは、パフォーマンス、保守性、安全性のバランスを�
 
 | Aspect | Choice | Trade-off |
 |--------|--------|-----------|
+| Target Structure | 2 Targets | SPM準拠 ↑, 管理複雑性 ↑ |
 | Tensor Conversion | C++ Layer | Performance ↑, Complexity ↑ |
 | Model Storage | Local Cache | Offline Support ↑, Storage ↑ |
 | Concurrency | Actor Model | Safety ↑, Learning Curve ↑ |
@@ -1204,6 +1102,6 @@ AbacusKitは、パフォーマンス、保守性、安全性のバランスを�
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 2.0  
 **Last Updated**: 2025-11-15  
 **Authors**: AbacusKit Team
