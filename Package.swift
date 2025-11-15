@@ -3,58 +3,58 @@
 
 import PackageDescription
 
+// swift-tools-version: 6.0
+
+import PackageDescription
+
 let package = Package(
     name: "AbacusKit",
     platforms: [
         .iOS(.v17)
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "AbacusKit",
             targets: ["AbacusKit"]
         ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        // MARK: - Swift Target
         .target(
             name: "AbacusKit",
-            cxxSettings: [
-                // C++17 standard required for LibTorch
-                .unsafeFlags(["-std=c++17"]),
-            ],
+            dependencies: ["AbacusKitBridge"],
+            path: "Sources/AbacusKit",
             swiftSettings: [
-                // Enable strict concurrency checking for Swift 6
                 .enableUpcomingFeature("StrictConcurrency"),
             ],
             linkerSettings: [
-                // IMPORTANT: LibTorch Binary Linking Instructions
-                // 
-                // LibTorch is not included in this package and must be linked manually.
-                // 
-                // Option 1: Manual Binary Integration
-                // 1. Download LibTorch iOS binary from: https://pytorch.org/mobile/ios/
-                // 2. Extract and add libtorch_lite_interpreter.a to your Xcode project
-                // 3. Add the following to your app target's "Other Linker Flags":
-                //    -force_load $(PROJECT_DIR)/path/to/libtorch_lite_interpreter.a
-                // 4. Add LibTorch include path to "Header Search Paths":
-                //    $(PROJECT_DIR)/path/to/libtorch/include
-                //
-                // Option 2: CocoaPods Integration
-                // 1. Add to your Podfile:
-                //    pod 'LibTorch-Lite', '~> 2.0.0'
-                // 2. Run: pod install
-                //
-                // Required Frameworks:
+                .linkedFramework("CoreVideo"),
+                .linkedFramework("CoreGraphics"),
                 .linkedFramework("Accelerate"),
                 .linkedFramework("CoreML"),
                 .linkedFramework("MetalPerformanceShaders"),
             ]
         ),
+
+        // MARK: - Bridge (Objective-C++/C++)
+        .target(
+            name: "AbacusKitBridge",
+            dependencies: [],
+            path: "Sources/AbacusKitBridge",
+            publicHeadersPath: "include",
+            cxxSettings: [
+                .unsafeFlags(["-std=c++17"]),
+            ],
+            linkerSettings: [
+                .linkedFramework("Accelerate"),
+            ]
+        ),
+
+        // MARK: - Tests
         .testTarget(
             name: "AbacusKitTests",
-            dependencies: ["AbacusKit"]
+            dependencies: ["AbacusKit"],
+            path: "Tests/AbacusKitTests"
         ),
     ],
     cxxLanguageStandard: .cxx17

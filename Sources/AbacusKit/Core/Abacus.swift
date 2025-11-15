@@ -1,5 +1,6 @@
 import Foundation
 import CoreVideo
+import AbacusKitBridge
 
 /// Main SDK interface for AbacusKit
 public struct Abacus {
