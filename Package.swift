@@ -18,6 +18,20 @@ let package = Package(
             targets: ["AbacusKit"]
         ),
     ],
+    dependencies: [
+        // 依存性注入: Resolver
+        .package(url: "https://github.com/hmlongco/Resolver.git", from: "1.5.0"),
+
+        // ロギング: SwiftLog
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
+
+        // モデル解凍: Zip
+        .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
+
+        // テスト: Quick & Nimble
+        .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
+        .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
+    ],
     targets: [
         // MARK: - Swift Target
         .target(
