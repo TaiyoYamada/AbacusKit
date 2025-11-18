@@ -1,0 +1,132 @@
+# SwiftFormat Configuration for AbacusKit
+# Swift 6 / iOS 17+ / Clean Architecture
+
+# Version
+--swiftversion 6.0
+
+# Indentation
+--indent 4
+--indentcase false
+--indentstrings false
+--tabwidth 4
+--xcodeindentation enabled
+
+# Wrapping
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapreturntype preserve
+--closingparen balanced
+
+# Spacing
+--trimwhitespace always
+--commas always
+--semicolons inline
+--ranges spaced
+--operatorfunc spaced
+
+# Options
+--ifdef no-indent
+--exponentcase lowercase
+--decimalgrouping 3,6
+--binarygrouping 4,8
+--octalgrouping 4,8
+--hexgrouping 4,8
+--fractiongrouping disabled
+--exponentgrouping disabled
+--patternlet inline
+--elseposition same-line
+--guardelse same-line
+--extensionacl on-declarations
+--redundanttype inferred
+--emptybraces no-space
+--linebreaks lf
+
+# Imports
+--importgrouping testable-bottom
+--marktypes always
+
+# Trailing
+--trailingclosures
+--nospaceoperators ..<,...
+
+# Wrapping
+--wrapternary before-operators
+
+# Enabled Rules
+--enable isEmpty
+--enable sortedImports
+--enable redundantReturn
+--enable redundantSelf
+--enable trailingCommas
+--enable wrapMultilineStatementBraces
+--enable blankLinesAtStartOfScope
+--enable blankLinesAtEndOfScope
+--enable blankLinesBetweenScopes
+--enable consecutiveSpaces
+--enable duplicateImports
+--enable redundantParens
+--enable redundantPattern
+--enable redundantGet
+--enable redundantNilInit
+--enable redundantLet
+--enable redundantObjc
+--enable redundantBreak
+--enable redundantExtensionACL
+--enable redundantFileprivate
+--enable redundantInit
+--enable redundantVoidReturnType
+--enable redundantBackticks
+--enable redundantClosure
+--enable redundantOptionalBinding
+--enable redundantType
+--enable spaceAroundBraces
+--enable spaceAroundBrackets
+--enable spaceAroundComments
+--enable spaceAroundGenerics
+--enable spaceAroundOperators
+--enable spaceAroundParens
+--enable spaceInsideBraces
+--enable spaceInsideBrackets
+--enable spaceInsideComments
+--enable spaceInsideGenerics
+--enable spaceInsideParens
+--enable trailingSpace
+--enable unusedArguments
+--enable void
+--enable wrap
+--enable wrapArguments
+--enable wrapAttributes
+--enable wrapConditionalBodies
+--enable wrapEnumCases
+--enable wrapSwitchCases
+--enable yodaConditions
+
+# Disabled Rules
+--disable andOperator
+--disable acronyms
+--disable assertionFailures
+--disable blockComments
+--disable docComments
+--disable fileHeader
+--disable hoistPatternLet
+--disable initCoderUnavailable
+--disable leadingDelimiters
+--disable linebreakAtEndOfFile
+--disable markTypes
+--disable numberFormatting
+--disable opaqueGenericParameters
+--disable organizeDeclarations
+--disable preferKeyPath
+--disable strongOutlets
+--disable strongifiedSelf
+--disable todos
+--disable typeSugar
+--disable wrapLoopBodies
+
+# Exclude
+--exclude .build
+--exclude .swiftpm
+--exclude Sources/AbacusKitBridge
+--exclude Tests/AbacusKitTests/Generated
