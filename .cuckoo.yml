@@ -1,0 +1,24 @@
+# Cuckoo Configuration
+# モック生成の設定ファイル
+
+# 生成するモックのソースファイル
+sources:
+  - Sources/AbacusKit/ML/ModelManager.swift
+  - Sources/AbacusKit/ML/ModelUpdater.swift
+  - Sources/AbacusKit/ML/PreprocessorProtocol.swift
+  - Sources/AbacusKit/Networking/ModelVersionAPI.swift
+  - Sources/AbacusKit/Networking/S3Downloader.swift
+  - Sources/AbacusKit/Storage/FileStorageProtocol.swift
+  - Sources/AbacusKit/Storage/ModelCacheProtocol.swift
+
+# モックの出力先
+output: Tests/AbacusKitTests/Generated
+
+# テストターゲット
+testable:
+  - AbacusKit
+
+# 除外するファイル
+exclude:
+  - "**/*+*.swift"
+  - "**/Generated/**"

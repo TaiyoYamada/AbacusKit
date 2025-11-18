@@ -1,29 +1,24 @@
 import Foundation
 
 /// Metadata about the AbacusKit SDK and current model state
-public struct AbacusMetadata: Sendable {
+///
+/// This structure provides information about the SDK version,
+/// loaded model, and update status.
+public struct AbacusMetadata: Sendable, Equatable {
     /// Version of the AbacusKit SDK
+    ///
+    /// This follows semantic versioning (e.g., "1.0.0").
     public let sdkVersion: String
     
     /// Currently loaded model version number
+    ///
+    /// This is `nil` if no model has been loaded yet.
     public let modelVersion: Int?
     
     /// Timestamp of the last model update check
+    ///
+    /// This is `nil` if no update check has been performed yet.
     public let lastUpdateCheck: Date?
-    
-    /// Get the current metadata
-    public static var current: AbacusMetadata {
-        // SDK version - should match Package.swift version
-        let sdkVersion = "1.0.0"
-        
-        // Model version and last check would be retrieved from ModelCache
-        // For now, return default values
-        return AbacusMetadata(
-            sdkVersion: sdkVersion,
-            modelVersion: nil,
-            lastUpdateCheck: nil
-        )
-    }
     
     /// Initialize metadata
     /// - Parameters:
@@ -34,5 +29,13 @@ public struct AbacusMetadata: Sendable {
         self.sdkVersion = sdkVersion
         self.modelVersion = modelVersion
         self.lastUpdateCheck = lastUpdateCheck
+    }
+}
+
+extension AbacusMetadata: CustomStringConvertible {
+    public var description: String {
+        let modelVersionStr = modelVersion.map { "\($0)" } ?? "none"
+        let lastCheckStr = lastUpdateCheck?.iso8601String ?? "never"
+        return "AbacusMetadata(sdkVersion: \(sdkVersion), modelVersion: \(modelVersionStr), lastUpdateCheck: \(lastCheckStr))"
     }
 }

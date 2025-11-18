@@ -1,380 +1,268 @@
 # AbacusKit
 
-AbacusKitは、iOS/iPadアプリケーション向けのリアルタイム推論SDKです。内側カメラからのCVPixelBuffer入力を受け取り、TorchScriptモデルを使用して推論を実行します。Amazon S3からのモデル自動更新機能を備え、オフライン動作もサポートします。
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B-blue.svg)](https://developer.apple.com/ios/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+A production-grade iOS SDK for real-time CoreML inference with automatic model updates from S3.
 
 ## Features
 
-- 🚀 リアルタイムカメラフレーム推論
-- 📦 Swift Package Manager対応
-- 🔄 S3からの自動モデル更新
-- 💾 ローカルモデルキャッシュによるオフライン動作
-- ⚡️ C++による高速Tensor変換
-- 🔒 Swift 6の厳格な並行性チェック対応
-- 🎯 Swift と C++ の明確な分離アーキテクチャ
+- **CoreML Integration**: Native iOS machine learning with Metal acceleration
+- **Automatic Updates**: Download and cache models from S3 with version management
+- **Clean Architecture**: SOLID principles with protocol-driven design
+- **Fully Testable**: 100% mockable through dependency injection
+- **Swift 6**: Strict concurrency with async/await throughout
+- **SwiftDocC**: Comprehensive API documentation
+- **Type Safe**: Explicit error handling with typed errors
 
-## Requirements
+## Architecture
 
-- Swift 6.0+
-- Xcode 16.0+
-- iOS 17.0+
-- LibTorch 2.0.0+ (TorchScript runtime)
+AbacusKit follows Clean Architecture principles with clear separation of concerns:
 
-## Architecture Overview
-
-AbacusKitは2つのターゲットで構成されています：
-
-### 1. AbacusKit (Swift)
-Swift のみで実装されたメインSDKターゲット。アプリケーション開発者が直接使用するAPIを提供します。
-
-**含まれるコンポーネント:**
-- Core: 公開API（Abacus、AbacusConfig、AbacusError）
-- ML: 入力検証（Preprocessor）
-- Networking: S3通信（VersionChecker、ModelDownloader）
-- Storage: ローカルストレージ（ModelCache、FileStorage）
-- Domain: データモデル（PredictionResult、ModelVersion）
-- Utils: ユーティリティ（Logger、ImageUtils）
-
-### 2. AbacusKitBridge (Objective-C++/C++)
-LibTorch との統合を担当するブリッジターゲット。C++17 を使用してTorchScriptモデルの実行とTensor変換を行います。
-
-**含まれるコンポーネント:**
-- TorchModule.h: Objective-C ブリッジヘッダー（public）
-- TorchModule.mm: Objective-C++ 実装
-- TorchModule.hpp: C++ ヘッダー
-- TorchModule.cpp: C++ 実装（LibTorch統合）
-
-### なぜターゲットを分離するのか？
-
-Swift Package Manager は、Swift と Objective-C++/C++ を同一ターゲット内で混在させることをサポートしていません。そのため、以下のように分離しています：
-
-- **AbacusKit**: Swift のみ → アプリ開発者が使用
-- **AbacusKitBridge**: Objective-C++/C++ のみ → LibTorch との統合
-
-この設計により、以下のメリットがあります：
-- ✅ SPM のビルドエラーを回避
-- ✅ 明確な責任分離
-- ✅ Swift と C++ の境界が明確
-- ✅ 保守性の向上
+```
+┌─────────────────────────────────────────┐
+│        Presentation Layer               │
+│         (Public API - Abacus)           │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│          Use Case Layer                 │
+│    (AbacusCoordinator, ModelUpdater)    │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│          Interface Layer                │
+│  (Protocols: ModelManager, S3Downloader,│
+│   ModelCache, FileStorage, etc.)        │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│       Infrastructure Layer              │
+│  (Implementations: CoreML, URLSession,  │
+│   FileManager, UserDefaults)            │
+└─────────────────────────────────────────┘
+```
 
 ## Installation
 
 ### Swift Package Manager
 
-\`Package.swift\`に以下を追加してください：
+Add AbacusKit to your `Package.swift`:
 
-\`\`\`swift
+```swift
 dependencies: [
-    .package(url: "https://github.com/your-org/AbacusKit.git", from: "1.0.0")
+    .package(url: "https://github.com/yourusername/AbacusKit.git", from: "1.0.0")
 ]
-\`\`\`
+```
 
-または、Xcodeで以下の手順で追加できます：
+Or add it via Xcode:
+1. File → Add Package Dependencies
+2. Enter the repository URL
+3. Select version and add to your target
 
-1. File > Add Package Dependencies...
-2. リポジトリURLを入力: \`https://github.com/your-org/AbacusKit.git\`
-3. バージョンを選択してプロジェクトに追加
+## Quick Start
 
-### LibTorch Setup
+### Basic Usage
 
-AbacusKitはLibTorch（PyTorchのC++ライブラリ）を必要とします。以下の手順でセットアップしてください：
-
-#### Option 1: Manual Binary Integration
-
-1. [PyTorch公式サイト](https://pytorch.org/mobile/ios/)からiOS用LibTorchをダウンロード
-2. ダウンロードした \`libtorch_lite_interpreter.a\` をプロジェクトに追加
-3. Xcode Build Settings で以下を設定：
-   - **Other Linker Flags**: \`-force_load $(PROJECT_DIR)/path/to/libtorch_lite_interpreter.a\`
-   - **Header Search Paths**: \`$(PROJECT_DIR)/path/to/libtorch/include\`
-4. 必要なフレームワークをリンク：
-   - Accelerate.framework
-   - CoreML.framework
-   - MetalPerformanceShaders.framework
-
-#### Option 2: CocoaPods Integration
-
-\`\`\`ruby
-# Podfile
-pod 'LibTorch-Lite', '~> 2.0.0'
-\`\`\`
-
-\`\`\`bash
-pod install
-\`\`\`
-
-詳細は\`Docs/ARCHITECTURE.md\`を参照してください。
-
-## Usage
-
-### Basic Setup
-
-\`\`\`swift
+```swift
 import AbacusKit
+
+// 1. Configure the SDK
+let config = AbacusConfig(
+    versionURL: URL(string: "https://s3.amazonaws.com/your-bucket/version.json")!,
+    modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+)
+
+// 2. Initialize AbacusKit
+let abacus = Abacus()
+try await abacus.configure(config: config)
+
+// 3. Perform inference
+let result = try await abacus.predict(pixelBuffer: pixelBuffer)
+print("Predicted value: \(result.value)")
+print("Confidence: \(result.confidence)")
+print("Inference time: \(result.inferenceTimeMs)ms")
+```
+
+### Camera Integration
+
+```swift
 import AVFoundation
+import AbacusKit
 
 class CameraViewController: UIViewController {
-    let abacus = Abacus.shared
+    let abacus = Abacus()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         Task {
+            let config = AbacusConfig(
+                versionURL: URL(string: "https://your-s3-url/version.json")!,
+                modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            )
+            try await abacus.configure(config: config)
+        }
+    }
+}
+
+extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        
+        Task {
             do {
-                // S3のURLとローカルストレージパスを設定
-                let config = AbacusConfig(
-                    versionURL: URL(string: "https://s3.amazonaws.com/your-bucket/version.json")!,
-                    modelDirectoryURL: FileManager.default.urls(
-                        for: .documentDirectory, 
-                        in: .userDomainMask
-                    )[0]
-                )
-                
-                // SDKを初期化（モデルのダウンロードと読み込み）
-                try await abacus.configure(config: config)
-                print("AbacusKit configured successfully")
+                let result = try await abacus.predict(pixelBuffer: pixelBuffer)
+                await MainActor.run {
+                    updateUI(with: result)
+                }
             } catch {
-                print("Configuration failed: \(error)")
+                print("Prediction failed: \(error)")
             }
         }
     }
 }
-\`\`\`
+```
 
-### Performing Inference
+## Model Format
 
-\`\`\`swift
-func captureOutput(_ output: AVCaptureOutput, 
-                  didOutput sampleBuffer: CMSampleBuffer, 
-                  from connection: AVCaptureConnection) {
-    guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-    
-    Task {
-        do {
-            // CVPixelBufferから推論を実行
-            let result = try await abacus.predict(pixelBuffer: pixelBuffer)
-            
-            print("Prediction: \(result.value)")
-            print("Confidence: \(result.confidence)")
-            print("Inference time: \(result.inferenceTimeMs)ms")
-            
-            // 結果をUIに反映
-            await updateUI(with: result)
-        } catch AbacusError.modelNotLoaded {
-            print("Model not loaded. Call configure() first.")
-        } catch AbacusError.preprocessingFailed(let reason) {
-            print("Preprocessing failed: \(reason)")
-        } catch {
-            print("Inference failed: \(error)")
-        }
-    }
-}
-\`\`\`
+### version.json
 
-## Inference Flow
+Your S3 bucket should host a `version.json` file:
 
-推論は以下のフローで実行されます：
-
-\`\`\`
-┌─────────────────────────────────────────┐
-│  1. Camera / Image Source               │
-│     CVPixelBuffer (BGRA/RGBA)           │
-└─────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────┐
-│  2. Abacus.predict() [Swift]            │
-│     - Model loaded check                │
-│     - Start time measurement            │
-└─────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────┐
-│  3. Preprocessor.validate() [Swift]     │
-│     - Pixel format validation           │
-│     - Dimension check                   │
-└─────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────┐
-│  4. TorchModuleBridge [ObjC++]          │
-│     - Swift → ObjC++ boundary           │
-└─────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────┐
-│  5. TorchModuleCpp [C++]                │
-│     - CVPixelBuffer → Tensor            │
-│     - model.forward(tensor)             │
-│     - Tensor → vector<float>            │
-└─────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────┐
-│  6. Result → Swift                      │
-│     - Parse output array                │
-│     - Create PredictionResult           │
-└─────────────────────────────────────────┘
-\`\`\`
-
-**Key Points:**
-- 入力検証は Swift 層で実行（Preprocessor）
-- Tensor 変換と推論は C++ 層で実行（パフォーマンス最適化）
-- エラーは C++ → ObjC++ → Swift と伝播
-
-## Model Update Mechanism
-
-AbacusKitは起動時に自動的にS3からモデルの更新をチェックします。
-
-### S3 Setup
-
-S3バケットに以下のファイルを配置してください：
-
-1. **version.json** - モデルのバージョン情報
-
-\`\`\`json
+```json
 {
-  "version": 5,
-  "model_url": "https://s3.amazonaws.com/your-bucket/models/model_v5.pt",
-  "updated_at": "2025-11-15T10:30:00Z"
+  "version": 1,
+  "model_url": "https://s3.amazonaws.com/your-bucket/model_v1.zip",
+  "updated_at": "2024-01-01T00:00:00Z"
 }
-\`\`\`
+```
 
-2. **model_vX.pt** - TorchScriptモデルファイル
+### Model Package
 
-### Update Flow
+The model URL should point to a zip file containing:
+- `.mlmodelc` (compiled CoreML model) or
+- `.mlmodel` (uncompiled CoreML model)
 
-1. \`configure()\`呼び出し時に\`version.json\`を取得
-2. ローカルキャッシュのバージョンと比較
-3. 新しいバージョンがあれば自動的にダウンロード
-4. ダウンロード完了後、新しいモデルを読み込み
-5. 次回起動時はキャッシュされたモデルを使用（オフライン動作）
+AbacusKit will automatically:
+1. Download the zip file
+2. Extract the model
+3. Compile if necessary
+4. Load into CoreML
+5. Cache for future use
 
-## CVPixelBuffer Input Requirements
+## Configuration
 
-AbacusKitは以下の形式のCVPixelBufferを受け付けます：
+### AbacusConfig
 
-- **Pixel Format**: \`kCVPixelFormatType_32BGRA\` または \`kCVPixelFormatType_32RGBA\`
-- **Color Space**: RGB
-- **Dimensions**: モデルの入力サイズに応じて自動リサイズ（推奨: 224x224以上）
+```swift
+let config = AbacusConfig(
+    versionURL: URL(string: "https://s3.amazonaws.com/bucket/version.json")!,
+    modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0],
+    forceUpdate: false  // Set to true to always download latest model
+)
+```
 
-### Input Preparation Example
+### Supported Pixel Formats
 
-\`\`\`swift
-// AVCaptureSessionからの取得
-func setupCamera() {
-    let videoOutput = AVCaptureVideoDataOutput()
-    videoOutput.videoSettings = [
-        kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
-    ]
-    // ... session setup
-}
-\`\`\`
+- `kCVPixelFormatType_32BGRA`
+- `kCVPixelFormatType_32RGBA`
+- `kCVPixelFormatType_24RGB`
 
 ## Error Handling
 
-AbacusKitは以下のエラーを返す可能性があります：
+AbacusKit provides comprehensive error types:
 
-| Error | Description | Solution |
-|-------|-------------|----------|
-| \`modelNotLoaded\` | モデルが読み込まれていない | \`configure()\`を先に呼び出してください |
-| \`downloadFailed\` | モデルのダウンロードに失敗 | ネットワーク接続とS3 URLを確認してください |
-| \`invalidModel\` | モデルファイルが破損または互換性なし | 正しいTorchScriptモデルを使用してください |
-| \`inferenceFailed\` | 推論実行中にエラー発生 | 入力データとモデルの互換性を確認してください |
-| \`preprocessingFailed\` | 入力の前処理に失敗 | CVPixelBufferの形式を確認してください |
+```swift
+do {
+    let result = try await abacus.predict(pixelBuffer: pixelBuffer)
+} catch AbacusError.notConfigured {
+    print("SDK not configured. Call configure() first.")
+} catch AbacusError.modelNotLoaded {
+    print("Model failed to load.")
+} catch AbacusError.preprocessingFailed(let reason) {
+    print("Invalid input: \(reason)")
+} catch AbacusError.inferenceFailed(let error) {
+    print("Inference failed: \(error)")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
 
-## Project Structure
+## Testing
 
-\`\`\`
-AbacusKit/
-├── Package.swift                    # SPM manifest (2 targets)
-├── Sources/
-│   ├── AbacusKit/                   # Swift target
-│   │   ├── Core/                    # Public API
-│   │   │   ├── Abacus.swift
-│   │   │   ├── AbacusConfig.swift
-│   │   │   └── AbacusError.swift
-│   │   ├── ML/                      # ML layer (Swift)
-│   │   │   └── Preprocessor.swift
-│   │   ├── Networking/              # S3 communication
-│   │   │   ├── VersionChecker.swift
-│   │   │   └── ModelDownloader.swift
-│   │   ├── Storage/                 # Local storage
-│   │   │   ├── ModelCache.swift
-│   │   │   └── FileStorage.swift
-│   │   ├── Domain/                  # Data models
-│   │   │   ├── PredictionResult.swift
-│   │   │   ├── ModelVersion.swift
-│   │   │   └── AbacusMetadata.swift
-│   │   └── Utils/                   # Utilities
-│   │       ├── Logger.swift
-│   │       └── ImageUtils.swift
-│   └── AbacusKitBridge/             # ObjC++/C++ target
-│       ├── include/                 # Public headers
-│       │   └── TorchModule.h
-│       ├── TorchModule.mm           # ObjC++ bridge
-│       ├── TorchModule.hpp          # C++ header
-│       └── TorchModule.cpp          # C++ implementation
-└── Tests/
-    └── AbacusKitTests/
-\`\`\`
+AbacusKit is designed for testability with protocol-driven architecture:
+
+```swift
+import XCTest
+@testable import AbacusKit
+
+class MyTests: XCTestCase {
+    func testPrediction() async throws {
+        // Use mock implementations
+        let mockModelManager = MockModelManager()
+        mockModelManager.predictResult = .success([42.0, 0.95])
+        
+        // Test your code with mocks
+        // ...
+    }
+}
+```
+
+All protocols have corresponding mock implementations in the test target.
 
 ## Performance
 
-典型的なパフォーマンス指標（iPhone 14 Pro、224x224入力）：
+- **Inference Time**: Typically 10-50ms on modern iOS devices
+- **Model Loading**: 100-500ms depending on model size
+- **Memory Usage**: Depends on model size, typically 50-200MB
 
-- 初回モデル読み込み: ~500ms
-- 推論時間: ~20-50ms（モデルサイズに依存）
-- メモリ使用量: ~50-100MB（モデルサイズに依存）
+## Requirements
 
-## Troubleshooting
+- iOS 17.0+
+- macOS 14.0+ (for development)
+- Swift 6.0+
+- Xcode 16.0+
 
-### LibTorch linking error
+## Dependencies
 
-**症状**: \`Undefined symbols for architecture arm64: "torch::..."\`
-
-**解決策**:
-- LibTorch バイナリが正しくリンクされているか確認
-- Other Linker Flags に \`-force_load\` が設定されているか確認
-- Header Search Paths が正しく設定されているか確認
-
-### Model not loading
-
-**症状**: \`configure()\`が\`invalidModel\`エラーを返す
-
-**解決策**:
-- TorchScriptモデルがiOS用にエクスポートされているか確認
-- モデルファイルが破損していないか確認
-- LibTorchのバージョンがモデルと互換性があるか確認
-
-\`\`\`python
-# PyTorchでiOS用モデルをエクスポート
-import torch
-
-model = YourModel()
-model.eval()
-
-example_input = torch.rand(1, 3, 224, 224)
-traced_model = torch.jit.trace(model, example_input)
-traced_model.save("model.pt")
-\`\`\`
-
-### Swift/C++ boundary errors
-
-**症状**: ビルドエラー「Cannot use Objective-C++ with Swift in the same target」
-
-**解決策**:
-- 最新の Package.swift を使用していることを確認
-- AbacusKit と AbacusKitBridge が正しく分離されているか確認
-- \`swift build\` でクリーンビルドを実行
+- [Resolver](https://github.com/hmlongco/Resolver) - Dependency injection
+- [SwiftLog](https://github.com/apple/swift-log) - Structured logging
+- [Zip](https://github.com/marmelroy/Zip) - Archive extraction
+- [Quick](https://github.com/Quick/Quick) - Testing framework
+- [Nimble](https://github.com/Quick/Nimble) - Matcher framework
 
 ## Documentation
 
-詳細なアーキテクチャドキュメントは以下を参照してください：
+Generate full documentation using SwiftDocC:
 
-- [ARCHITECTURE.md](Docs/ARCHITECTURE.md) - 内部設計と実装詳細
-
-## License
-
-[Your License Here]
+```bash
+swift package generate-documentation
+```
 
 ## Contributing
 
-[Contributing guidelines]
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## License
+
+AbacusKit is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Credits
+
+Developed with ❤️ following Clean Architecture and SOLID principles.
 
 ## Support
 
-問題が発生した場合は、GitHubのIssuesで報告してください。
+For issues and questions:
+- Open an issue on [GitHub](https://github.com/yourusername/AbacusKit/issues)
+- Check the [documentation](https://yourusername.github.io/AbacusKit)
+
+---
+
+**Note**: This SDK uses CoreML for inference. Ensure your models are compatible with CoreML format (.mlmodel or .mlmodelc).

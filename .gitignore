@@ -7,3 +7,6 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 .kiro
+
+# Cuckoo generated mocks
+Tests/AbacusKitTests/Generated/GeneratedMocks.swift
