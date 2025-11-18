@@ -22,7 +22,6 @@ protocol ModelManager: Sendable {
     func isModelLoaded() async -> Bool
 }
 
-// CVPixelBuffer is not Sendable, so we need to suppress the warning
 extension CVPixelBuffer: @unchecked Sendable {}
 
 /// Implementation of ModelManager using CoreML
@@ -38,7 +37,6 @@ actor ModelManagerImpl: ModelManager {
         logger.info("Loading CoreML model", metadata: ["path": url.path])
         
         do {
-            // CoreMLモデルを非同期でロード
             let compiledURL = try await compileModelIfNeeded(url)
             let model = try await MLModel.load(contentsOf: compiledURL)
             
@@ -58,19 +56,13 @@ actor ModelManagerImpl: ModelManager {
         }
         
         do {
-            // CVPixelBufferをMLFeatureValueに変換
             let inputFeature = MLFeatureValue(pixelBuffer: pixelBuffer)
-            
-            // 入力を準備（モデルの入力名に応じて調整が必要）
             let inputProvider = try MLDictionaryFeatureProvider(
                 dictionary: ["input": inputFeature]
             )
             
-            // 推論を実行
             let output = try await model.prediction(from: inputProvider)
             
-            // 出力を解析（モデルの出力形式に応じて調整が必要）
-            // ここでは出力が "output" という名前のMultiArrayであると仮定
             guard let outputFeature = output.featureValue(for: "output"),
                   let multiArray = outputFeature.multiArrayValue else {
                 logger.error("Failed to extract output from model prediction")
@@ -83,7 +75,6 @@ actor ModelManagerImpl: ModelManager {
                 )
             }
             
-            // MultiArrayをFloat配列に変換
             let outputArray = convertMultiArrayToFloatArray(multiArray)
             
             logger.debug(
@@ -104,16 +95,11 @@ actor ModelManagerImpl: ModelManager {
         return model != nil
     }
     
-    // MARK: - Private Helpers
-    
-    /// モデルが未コンパイルの場合はコンパイルする
     private func compileModelIfNeeded(_ url: URL) async throws -> URL {
-        // .mlmodelcの場合はそのまま返す
         if url.pathExtension == "mlmodelc" {
             return url
         }
         
-        // .mlmodelの場合はコンパイルが必要
         if url.pathExtension == "mlmodel" {
             logger.info("Compiling CoreML model")
             let compiledURL = try await withCheckedThrowingContinuation { continuation in
@@ -130,11 +116,9 @@ actor ModelManagerImpl: ModelManager {
             return compiledURL
         }
         
-        // それ以外の場合はそのまま返す（エラーはloadで発生）
         return url
     }
     
-    /// MLMultiArrayをFloat配列に変換
     private func convertMultiArrayToFloatArray(_ multiArray: MLMultiArray) -> [Float] {
         let count = multiArray.count
         var result = [Float](repeating: 0, count: count)

@@ -50,7 +50,6 @@ final class S3DownloaderImpl: S3Downloader {
                 throw URLError(.badServerResponse)
             }
             
-            // ダウンロードしたファイルのサイズを検証
             let fileManager = FileManager.default
             let attributes = try fileManager.attributesOfItem(atPath: tempURL.path)
             guard let fileSize = attributes[.size] as? Int64, fileSize > 0 else {
@@ -60,19 +59,16 @@ final class S3DownloaderImpl: S3Downloader {
             
             logger.info("Download completed", metadata: ["size": "\(fileSize) bytes"])
             
-            // 保存先ディレクトリを作成
             let destinationDirectory = destination.deletingLastPathComponent()
             try fileManager.createDirectory(
                 at: destinationDirectory,
                 withIntermediateDirectories: true
             )
             
-            // 既存ファイルがあれば削除
             if fileManager.fileExists(atPath: destination.path) {
                 try fileManager.removeItem(at: destination)
             }
             
-            // ダウンロードしたファイルを最終的な保存先に移動
             try fileManager.moveItem(at: tempURL, to: destination)
             
             logger.info("File saved successfully", metadata: ["path": destination.path])

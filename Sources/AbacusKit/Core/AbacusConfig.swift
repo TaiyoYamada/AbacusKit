@@ -50,9 +50,7 @@ public struct AbacusConfig: Sendable {
     
     /// Validate the configuration
     /// - Throws: AbacusError.invalidConfiguration if validation fails
-    /// 設定の妥当性を検証
     func validate() throws {
-        // versionURLがHTTP/HTTPSスキームであることを確認
         guard let scheme = versionURL.scheme,
               ["http", "https"].contains(scheme.lowercased()) else {
             throw AbacusError.invalidConfiguration(
@@ -60,7 +58,6 @@ public struct AbacusConfig: Sendable {
             )
         }
         
-        // modelDirectoryURLがfileスキームであることを確認
         guard modelDirectoryURL.isFileURL else {
             throw AbacusError.invalidConfiguration(
                 reason: "modelDirectoryURL must be a file URL"

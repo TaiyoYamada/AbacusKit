@@ -27,13 +27,10 @@ public final class AbacusContainer: @unchecked Sendable {
     }
     
     /// Register all dependencies in the container
-    /// 依存関係を登録（プロトコルベースで疎結合を実現）
     private func registerDependencies() {
-        // MARK: - Core
         resolver.register { Logger.make(category: "Core") }
             .scope(.shared)
         
-        // MARK: - Networking
         resolver.register { URLSession.shared }
             .scope(.shared)
         
@@ -43,14 +40,12 @@ public final class AbacusContainer: @unchecked Sendable {
         resolver.register { S3DownloaderImpl() as S3Downloader }
             .scope(.shared)
         
-        // MARK: - Storage
         resolver.register { FileStorageImpl() as FileStorage }
             .scope(.shared)
         
         resolver.register { ModelCacheImpl() as ModelCache }
             .scope(.shared)
         
-        // MARK: - ML
         resolver.register { PreprocessorImpl() as Preprocessor }
             .scope(.shared)
         
@@ -76,7 +71,6 @@ public final class AbacusContainer: @unchecked Sendable {
     }
     
     /// Reset all registrations (useful for testing)
-    /// テスト用にコンテナをリセット
     public func reset() {
         Resolver.reset()
         registerDependencies()

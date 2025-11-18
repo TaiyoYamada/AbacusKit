@@ -20,7 +20,6 @@ final class PreprocessorImpl: Preprocessor {
     }
     
     func validate(_ pixelBuffer: CVPixelBuffer) throws {
-        // ピクセルフォーマットをチェック
         let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
         
         let supportedFormats: [OSType] = [
@@ -40,7 +39,6 @@ final class PreprocessorImpl: Preprocessor {
             )
         }
         
-        // 画像サイズをチェック
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
         
@@ -54,7 +52,6 @@ final class PreprocessorImpl: Preprocessor {
             )
         }
         
-        // プレーナーフォーマットはサポートしない
         let isPlanar = CVPixelBufferIsPlanar(pixelBuffer)
         guard !isPlanar else {
             logger.error("Planar pixel buffers are not supported")
@@ -73,9 +70,6 @@ final class PreprocessorImpl: Preprocessor {
         )
     }
     
-    // MARK: - Private Helpers
-    
-    /// ピクセルフォーマットを文字列に変換
     private func pixelFormatToString(_ format: OSType) -> String {
         let chars = [
             UInt8((format >> 24) & 0xFF),

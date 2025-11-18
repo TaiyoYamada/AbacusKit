@@ -128,9 +128,6 @@ public struct Logger: Sendable {
         )
     }
     
-    // MARK: - Private Helpers
-    
-    /// メタデータをSwiftLogの形式に変換
     private func convertMetadata(_ metadata: [String: String]?) -> Logging.Logger.Metadata? {
         guard let metadata = metadata else { return nil }
         return metadata.mapValues { Logging.Logger.MetadataValue.string($0) }

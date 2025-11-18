@@ -76,7 +76,6 @@ actor ModelCacheImpl: ModelCache {
         self.currentModelURL = modelURL
         self.currentVersion = version
         
-        // UserDefaultsに永続化
         userDefaults.set(modelURL.absoluteString, forKey: modelURLKey)
         userDefaults.set(version, forKey: modelVersionKey)
         

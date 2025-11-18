@@ -24,9 +24,15 @@ jobs:
       - name: Setup Swift
         uses: swift-actions/setup-swift@v2
 
-      # Mint をインストール
+      # Homebrew で Mint をインストール
       - name: Install Mint
         run: brew install mint
+
+      # Mint 経由で SwiftLint / SwiftFormat をインストール
+      - name: Install SwiftLint & SwiftFormat
+        run: |
+          mint install realm/SwiftLint
+          mint install nicklockwood/SwiftFormat
 
       # SwiftLint を実行
       - name: Run SwiftLint

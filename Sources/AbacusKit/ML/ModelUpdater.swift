@@ -43,7 +43,6 @@ final class ModelUpdaterImpl: ModelUpdater {
     func updateModelIfNeeded(config: AbacusConfig, forceUpdate: Bool) async throws -> URL {
         logger.info("Checking for model updates")
         
-        // リモートバージョンを取得
         let remoteVersion: ModelVersion
         do {
             remoteVersion = try await versionAPI.fetchVersion(from: config.versionURL)
@@ -52,11 +51,9 @@ final class ModelUpdaterImpl: ModelUpdater {
             throw AbacusError.versionCheckFailed(underlying: error)
         }
         
-        // キャッシュされたバージョンを確認
         let cachedVersion = await cache.getCurrentVersion()
         let cachedModelURL = await cache.getCurrentModelURL()
         
-        // 更新が必要かチェック
         let needsUpdate = forceUpdate ||
                          cachedVersion == nil ||
                          cachedModelURL == nil ||
@@ -74,7 +71,6 @@ final class ModelUpdaterImpl: ModelUpdater {
             return cachedURL
         }
         
-        // 新しいモデルをダウンロード
         logger.info(
             "Downloading new model",
             metadata: ["version": "\(remoteVersion.version)"]
@@ -84,26 +80,21 @@ final class ModelUpdaterImpl: ModelUpdater {
         let zipURL = config.modelDirectoryURL.appendingPathComponent(zipFileName)
         
         do {
-            // ZIPファイルをダウンロード
             let downloadedZipURL = try await downloader.download(
                 from: remoteVersion.modelURL,
                 to: zipURL
             )
             
-            // ZIPファイルを解凍
             logger.info("Extracting model archive")
             let extractedURL = try await extractModel(
                 zipURL: downloadedZipURL,
                 destinationDirectory: config.modelDirectoryURL
             )
             
-            // ダウンロードしたZIPファイルを削除
             try? storage.deleteFile(at: downloadedZipURL)
             
-            // キャッシュを更新
             await cache.update(modelURL: extractedURL, version: remoteVersion.version)
             
-            // 古いモデルファイルをクリーンアップ
             if let oldModelURL = cachedModelURL,
                oldModelURL != extractedURL,
                storage.fileExists(at: oldModelURL) {
@@ -133,11 +124,9 @@ final class ModelUpdaterImpl: ModelUpdater {
     /// ZIPファイルを解凍してモデルファイルのURLを返す
     private func extractModel(zipURL: URL, destinationDirectory: URL) async throws -> URL {
         do {
-            // 解凍先ディレクトリを作成
             let extractDirectory = destinationDirectory.appendingPathComponent("extracted_\(UUID().uuidString)")
             try storage.createDirectory(at: extractDirectory, withIntermediateDirectories: true)
             
-            // ZIPを解凍
             try Zip.unzipFile(
                 zipURL,
                 destination: extractDirectory,
@@ -145,22 +134,18 @@ final class ModelUpdaterImpl: ModelUpdater {
                 password: nil
             )
             
-            // 解凍されたファイルから.mlmodelcまたは.mlmodelを探す
             let contents = try storage.contentsOfDirectory(at: extractDirectory)
             
-            // .mlmodelcを優先的に探す
             if let modelURL = contents.first(where: { $0.pathExtension == "mlmodelc" }) {
                 logger.info("Found compiled model", metadata: ["path": modelURL.path])
                 return modelURL
             }
             
-            // .mlmodelを探す
             if let modelURL = contents.first(where: { $0.pathExtension == "mlmodel" }) {
                 logger.info("Found uncompiled model", metadata: ["path": modelURL.path])
                 return modelURL
             }
             
-            // モデルファイルが見つからない
             logger.error("No model file found in archive")
             throw AbacusError.extractionFailed(
                 underlying: NSError(

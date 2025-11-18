@@ -135,7 +135,6 @@ actor AbacusCoordinator {
     func configure(config: AbacusConfig) async throws {
         logger.info("Starting configuration")
         
-        // 設定を検証
         do {
             try config.validate()
         } catch {
@@ -143,7 +142,6 @@ actor AbacusCoordinator {
             throw error
         }
         
-        // モデルを更新（必要に応じてダウンロード）
         let modelURL: URL
         do {
             modelURL = try await modelUpdater.updateModelIfNeeded(
@@ -155,7 +153,6 @@ actor AbacusCoordinator {
             throw error
         }
         
-        // CoreMLモデルをロード
         do {
             try await modelManager.loadModel(from: modelURL)
         } catch {
@@ -168,19 +165,16 @@ actor AbacusCoordinator {
     }
     
     func predict(pixelBuffer: CVPixelBuffer) async throws -> PredictionResult {
-        // 設定が完了しているか確認
         guard isConfigured else {
             logger.error("Attempted prediction before configuration")
             throw AbacusError.notConfigured
         }
         
-        // モデルがロードされているか確認
         guard await modelManager.isModelLoaded() else {
             logger.error("Model not loaded")
             throw AbacusError.modelNotLoaded
         }
         
-        // 入力を検証
         do {
             try preprocessor.validate(pixelBuffer)
         } catch {
@@ -188,7 +182,6 @@ actor AbacusCoordinator {
             throw error
         }
         
-        // 推論を実行（時間を計測）
         let startTime = Date()
         
         let outputArray: [Float]
@@ -201,9 +194,6 @@ actor AbacusCoordinator {
         
         let inferenceTimeMs = Int(Date().timeIntervalSince(startTime) * 1000)
         
-        // 出力を解析
-        // モデルの出力形式に応じて調整が必要
-        // ここでは [value, confidence, ...] の形式を想定
         guard outputArray.count >= 2 else {
             logger.error(
                 "Invalid output array size",
