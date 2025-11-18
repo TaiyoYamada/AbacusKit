@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+      # リポジトリをチェックアウト
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Swift のセットアップ
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+
+      # Mint をインストール
+      - name: Install Mint
+        run: brew install mint
+
+      # SwiftLint を実行
+      - name: Run SwiftLint
+        run: mint run swiftlint
+
+      # SwiftFormat のチェック（自動整形はしない）
+      - name: Check SwiftFormat
+        run: mint run swiftformat --lint .
+
+      # ビルド
+      - name: Build
+        run: swift build
+
+      # テスト実行
+      - name: Test
+        run: swift test
