@@ -3,10 +3,6 @@
 
 import PackageDescription
 
-// swift-tools-version: 6.0
-
-import PackageDescription
-
 let package = Package(
     name: "AbacusKit",
     platforms: [
@@ -20,28 +16,20 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // 依存性注入: Resolver
+        .package(
+            url: "https://github.com/pytorch/executorch.git",
+            branch: "swiftpm-1.0.0"
+        ),
         .package(url: "https://github.com/hmlongco/Resolver.git", from: "1.5.0"),
-
-        // ロギング: SwiftLog
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
-
-        // モデル解凍: Zip
         .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
-
-        // テスト: Quick & Nimble
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
-
-        // モック生成: Cuckoo
         .package(url: "https://github.com/Brightify/Cuckoo.git", from: "2.0.0"),
-
-        // DocC プラグイン
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
     ],
     targets: [
         // MARK: - Swift Target
-
         .target(
             name: "AbacusKit",
             dependencies: [
@@ -64,23 +52,24 @@ let package = Package(
         ),
 
         // MARK: - Bridge (Objective-C++/C++)
-
-        // Note: Bridge is kept for OpenCV preprocessing support
-        // LibTorch functionality has been replaced with CoreML
         .target(
             name: "AbacusKitBridge",
-            dependencies: [],
+            dependencies: [
+                .product(name: "ExecuTorchKit", package: "executorch")
+            ],
             path: "Sources/AbacusKitBridge",
-            sources: ["TorchModule.mm"], // Only compile .mm file
+            sources: ["TorchModule.mm"],
             publicHeadersPath: "include",
             cxxSettings: [
                 .unsafeFlags(["-std=c++17"]),
+                .unsafeFlags(["-Wno-shorten-64-to-32"]),
+                .unsafeFlags(["-Wno-deprecated-declarations"]),
             ],
             linkerSettings: [
                 .linkedFramework("Accelerate"),
+                .linkedLibrary("c++"),
             ]
         ),
-
         // MARK: - Tests
 
         .testTarget(
