@@ -19,11 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Swift 6.1.1 を強制（macOS の古い Swift を無効化）
-      - name: Set up Swift 6.1
+      # Swift 6.0.3 を強制（macOS の古い Swift を無効化）
+      - name: Set up Swift
         uses: swift-actions/setup-swift@v2
         with:
-          swift-version: "6.1.1"
+          swift-version: "6.0.3"
 
       # brew で Linter / Formatter をインストール
       - name: Install SwiftLint & SwiftFormat
