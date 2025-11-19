@@ -15,11 +15,11 @@ import Logging
 /// ```
 public struct Logger: Sendable {
     private let logger: Logging.Logger
-    
+
     private init(logger: Logging.Logger) {
         self.logger = logger
     }
-    
+
     /// Create a logger for a specific category
     /// - Parameter category: The category/module name for this logger
     /// - Returns: Configured logger instance
@@ -28,7 +28,7 @@ public struct Logger: Sendable {
         logger.logLevel = .info
         return Logger(logger: logger)
     }
-    
+
     /// Log an info-level message
     /// - Parameters:
     ///   - message: The message to log
@@ -51,7 +51,7 @@ public struct Logger: Sendable {
             line: line
         )
     }
-    
+
     /// Log a debug-level message
     /// - Parameters:
     ///   - message: The message to log
@@ -74,7 +74,7 @@ public struct Logger: Sendable {
             line: line
         )
     }
-    
+
     /// Log a warning-level message
     /// - Parameters:
     ///   - message: The message to log
@@ -97,7 +97,7 @@ public struct Logger: Sendable {
             line: line
         )
     }
-    
+
     /// Log an error-level message
     /// - Parameters:
     ///   - message: The message to log
@@ -115,10 +115,10 @@ public struct Logger: Sendable {
         line: UInt = #line
     ) {
         var fullMetadata = metadata ?? [:]
-        if let error = error {
+        if let error {
             fullMetadata["error"] = String(describing: error)
         }
-        
+
         logger.error(
             Logging.Logger.Message(stringLiteral: message),
             metadata: convertMetadata(fullMetadata),
@@ -127,9 +127,11 @@ public struct Logger: Sendable {
             line: line
         )
     }
-    
+
     private func convertMetadata(_ metadata: [String: String]?) -> Logging.Logger.Metadata? {
-        guard let metadata = metadata else { return nil }
+        guard let metadata else {
+            return nil
+        }
         return metadata.mapValues { Logging.Logger.MetadataValue.string($0) }
     }
 }

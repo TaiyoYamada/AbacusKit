@@ -9,17 +9,17 @@ public struct AbacusMetadata: Sendable, Equatable {
     ///
     /// This follows semantic versioning (e.g., "1.0.0").
     public let sdkVersion: String
-    
+
     /// Currently loaded model version number
     ///
     /// This is `nil` if no model has been loaded yet.
     public let modelVersion: Int?
-    
+
     /// Timestamp of the last model update check
     ///
     /// This is `nil` if no update check has been performed yet.
     public let lastUpdateCheck: Date?
-    
+
     /// Initialize metadata
     /// - Parameters:
     ///   - sdkVersion: Version of the SDK

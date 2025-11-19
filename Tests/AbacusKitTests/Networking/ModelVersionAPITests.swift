@@ -1,7 +1,7 @@
-import XCTest
-import Quick
-import Nimble
 import Cuckoo
+import Nimble
+import Quick
+import XCTest
 @testable import AbacusKit
 
 final class ModelVersionAPISpec: QuickSpec {
@@ -9,12 +9,12 @@ final class ModelVersionAPISpec: QuickSpec {
         describe("ModelVersionAPIImpl") {
             var api: ModelVersionAPIImpl!
             var mockSession: URLSession!
-            
+
             beforeEach {
                 mockSession = URLSession.shared
                 api = ModelVersionAPIImpl(urlSession: mockSession)
             }
-            
+
             describe("fetchVersion") {
                 it("should decode valid JSON") {
                     let json = """
@@ -23,13 +23,13 @@ final class ModelVersionAPISpec: QuickSpec {
                         "model_url": "https://example.com/model.zip"
                     }
                     """
-                    
+
                     let data = json.data(using: .utf8)!
                     let decoder = JSONDecoder()
                     decoder.dateDecodingStrategy = .iso8601
-                    
+
                     let modelVersion = try? decoder.decode(ModelVersion.self, from: data)
-                    
+
                     expect(modelVersion).toNot(beNil())
                     expect(modelVersion?.version).to(equal(1))
                     expect(modelVersion?.modelURL.absoluteString).to(equal("https://example.com/model.zip"))

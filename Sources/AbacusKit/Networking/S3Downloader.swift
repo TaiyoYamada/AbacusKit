@@ -17,7 +17,7 @@ protocol S3Downloader: Sendable {
 final class S3DownloaderImpl: S3Downloader {
     private let urlSession: URLSession
     private let logger: Logger
-    
+
     init(
         urlSession: URLSession = .shared,
         logger: Logger = .make(category: "Networking")
@@ -25,23 +25,23 @@ final class S3DownloaderImpl: S3Downloader {
         self.urlSession = urlSession
         self.logger = logger
     }
-    
+
     func download(from url: URL, to destination: URL) async throws -> URL {
         logger.info(
             "Starting model download",
             metadata: [
                 "url": url.absoluteString,
-                "destination": destination.path
+                "destination": destination.path,
             ]
         )
-        
+
         do {
             let (tempURL, response) = try await urlSession.download(from: url)
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw URLError(.badServerResponse)
             }
-            
+
             guard (200...299).contains(httpResponse.statusCode) else {
                 logger.error(
                     "Download failed with status code",
@@ -49,30 +49,30 @@ final class S3DownloaderImpl: S3Downloader {
                 )
                 throw URLError(.badServerResponse)
             }
-            
+
             let fileManager = FileManager.default
             let attributes = try fileManager.attributesOfItem(atPath: tempURL.path)
             guard let fileSize = attributes[.size] as? Int64, fileSize > 0 else {
                 logger.error("Downloaded file has zero size")
                 throw URLError(.zeroByteResource)
             }
-            
+
             logger.info("Download completed", metadata: ["size": "\(fileSize) bytes"])
-            
+
             let destinationDirectory = destination.deletingLastPathComponent()
             try fileManager.createDirectory(
                 at: destinationDirectory,
                 withIntermediateDirectories: true
             )
-            
+
             if fileManager.fileExists(atPath: destination.path) {
                 try fileManager.removeItem(at: destination)
             }
-            
+
             try fileManager.moveItem(at: tempURL, to: destination)
-            
+
             logger.info("File saved successfully", metadata: ["path": destination.path])
-            
+
             return destination
         } catch {
             logger.error("Download failed", error: error)

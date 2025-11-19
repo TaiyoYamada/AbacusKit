@@ -5,7 +5,6 @@ import Foundation
 /// This module provides utilities for managing concurrent operations
 /// and task cancellation in a structured concurrency environment.
 public enum TaskHelper {
-    
     /// Execute an async operation with timeout
     /// - Parameters:
     ///   - timeout: Maximum duration in seconds
@@ -21,25 +20,25 @@ public enum TaskHelper {
             group.addTask {
                 try await operation()
             }
-            
+
             // タイムアウトタスクを追加
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 throw TimeoutError()
             }
-            
+
             // 最初に完了したタスクの結果を返す
             guard let result = try await group.next() else {
                 throw TimeoutError()
             }
-            
+
             // 残りのタスクをキャンセル
             group.cancelAll()
-            
+
             return result
         }
     }
-    
+
     /// Execute multiple async operations concurrently
     /// - Parameter operations: Array of async operations to execute
     /// - Returns: Array of results in the same order as operations
@@ -55,18 +54,18 @@ public enum TaskHelper {
                     return (index, result)
                 }
             }
-            
+
             // 結果を収集
             var results: [(Int, T)] = []
             for try await result in group {
                 results.append(result)
             }
-            
+
             // インデックス順にソートして返す
             return results.sorted { $0.0 < $1.0 }.map { $0.1 }
         }
     }
-    
+
     /// Retry an async operation with exponential backoff
     /// - Parameters:
     ///   - maxAttempts: Maximum number of retry attempts
@@ -83,24 +82,24 @@ public enum TaskHelper {
     ) async throws -> T {
         var lastError: Error?
         var delay = initialDelay
-        
+
         for attempt in 1...maxAttempts {
             do {
                 return try await operation()
             } catch {
                 lastError = error
-                
+
                 // 最後の試行の場合はエラーをスロー
                 if attempt == maxAttempts {
                     break
                 }
-                
+
                 // 指数バックオフで待機
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 delay = min(delay * 2, maxDelay)
             }
         }
-        
+
         throw lastError ?? TimeoutError()
     }
 }
@@ -110,6 +109,6 @@ public enum TaskHelper {
 /// Error thrown when an operation exceeds its timeout
 public struct TimeoutError: Error, LocalizedError {
     public var errorDescription: String? {
-        return "Operation timed out"
+        "Operation timed out"
     }
 }

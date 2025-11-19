@@ -1,5 +1,5 @@
-import Foundation
 import CoreVideo
+import Foundation
 import Resolver
 
 /// Main SDK interface for AbacusKit
@@ -19,17 +19,16 @@ import Resolver
 ///
 /// All methods are thread-safe and use Swift's actor model for concurrency.
 public final class Abacus: Sendable {
-    
     private let coordinator: AbacusCoordinator
-    
+
     /// Initialize a new Abacus instance
     ///
     /// This creates a new instance with default dependency injection.
     /// For testing, you can provide a custom container.
     public init(container: AbacusContainer = .shared) {
-        self.coordinator = AbacusCoordinator(container: container)
+        coordinator = AbacusCoordinator(container: container)
     }
-    
+
     /// Configure the SDK with remote version URL and local storage
     ///
     /// This method performs the following operations:
@@ -53,7 +52,7 @@ public final class Abacus: Sendable {
     public func configure(config: AbacusConfig) async throws {
         try await coordinator.configure(config: config)
     }
-    
+
     /// Perform inference on a camera frame
     ///
     /// This method performs the following operations:
@@ -79,18 +78,18 @@ public final class Abacus: Sendable {
     /// - 32RGBA
     /// - 24RGB
     public func predict(pixelBuffer: CVPixelBuffer) async throws -> PredictionResult {
-        return try await coordinator.predict(pixelBuffer: pixelBuffer)
+        try await coordinator.predict(pixelBuffer: pixelBuffer)
     }
-    
+
     /// Get current SDK metadata
     ///
     /// Returns information about the SDK version and currently loaded model.
     ///
     /// - Returns: Metadata containing SDK and model information
     public func getMetadata() async -> AbacusMetadata {
-        return await coordinator.getMetadata()
+        await coordinator.getMetadata()
     }
-    
+
     /// Force a model update check and download if available
     ///
     /// This method forces a check for model updates even if the cached
@@ -121,27 +120,27 @@ actor AbacusCoordinator {
     private let preprocessor: Preprocessor
     private let cache: ModelCache
     private let logger: Logger
-    
+
     private var isConfigured = false
-    
+
     init(container: AbacusContainer) {
-        self.modelUpdater = container.resolve()
-        self.modelManager = container.resolve()
-        self.preprocessor = container.resolve()
-        self.cache = container.resolve()
-        self.logger = Logger.make(category: "Core")
+        modelUpdater = container.resolve()
+        modelManager = container.resolve()
+        preprocessor = container.resolve()
+        cache = container.resolve()
+        logger = Logger.make(category: "Core")
     }
-    
+
     func configure(config: AbacusConfig) async throws {
         logger.info("Starting configuration")
-        
+
         do {
             try config.validate()
         } catch {
             logger.error("Configuration validation failed", error: error)
             throw error
         }
-        
+
         let modelURL: URL
         do {
             modelURL = try await modelUpdater.updateModelIfNeeded(
@@ -152,38 +151,38 @@ actor AbacusCoordinator {
             logger.error("Model update failed", error: error)
             throw error
         }
-        
+
         do {
             try await modelManager.loadModel(from: modelURL)
         } catch {
             logger.error("Model loading failed", error: error)
             throw error
         }
-        
+
         isConfigured = true
         logger.info("Configuration completed successfully")
     }
-    
+
     func predict(pixelBuffer: CVPixelBuffer) async throws -> PredictionResult {
         guard isConfigured else {
             logger.error("Attempted prediction before configuration")
             throw AbacusError.notConfigured
         }
-        
+
         guard await modelManager.isModelLoaded() else {
             logger.error("Model not loaded")
             throw AbacusError.modelNotLoaded
         }
-        
+
         do {
             try preprocessor.validate(pixelBuffer)
         } catch {
             logger.error("Input validation failed", error: error)
             throw error
         }
-        
+
         let startTime = Date()
-        
+
         let outputArray: [Float]
         do {
             outputArray = try await modelManager.predict(pixelBuffer: pixelBuffer)
@@ -191,9 +190,9 @@ actor AbacusCoordinator {
             logger.error("Inference failed", error: error)
             throw error
         }
-        
+
         let inferenceTimeMs = Int(Date().timeIntervalSince(startTime) * 1000)
-        
+
         guard outputArray.count >= 2 else {
             logger.error(
                 "Invalid output array size",
@@ -207,31 +206,31 @@ actor AbacusCoordinator {
                 )
             )
         }
-        
+
         let value = Int(outputArray[0])
         let confidence = Double(outputArray[1])
-        
+
         let result = PredictionResult(
             value: value,
             confidence: confidence,
             inferenceTimeMs: inferenceTimeMs
         )
-        
+
         logger.debug(
             "Prediction completed",
             metadata: [
                 "value": "\(value)",
                 "confidence": "\(confidence)",
-                "inferenceTimeMs": "\(inferenceTimeMs)"
+                "inferenceTimeMs": "\(inferenceTimeMs)",
             ]
         )
-        
+
         return result
     }
-    
+
     func getMetadata() async -> AbacusMetadata {
         let modelVersion = await cache.getCurrentVersion()
-        
+
         return AbacusMetadata(
             sdkVersion: "1.0.0",
             modelVersion: modelVersion,

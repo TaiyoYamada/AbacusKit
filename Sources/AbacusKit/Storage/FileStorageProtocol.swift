@@ -9,25 +9,25 @@ protocol FileStorage: Sendable {
     /// - Parameter url: The file URL to check
     /// - Returns: True if file exists, false otherwise
     func fileExists(at url: URL) -> Bool
-    
+
     /// Delete file at URL
     /// - Parameter url: The file URL to delete
     /// - Throws: Error if deletion fails
     func deleteFile(at url: URL) throws
-    
+
     /// Get file size in bytes
     /// - Parameter url: The file URL to check
     /// - Returns: File size in bytes
     /// - Throws: Error if file doesn't exist or attributes cannot be read
     func fileSize(at url: URL) throws -> Int64
-    
+
     /// Create directory at URL
     /// - Parameters:
     ///   - url: Directory URL to create
     ///   - createIntermediates: Whether to create intermediate directories
     /// - Throws: Error if creation fails
     func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool) throws
-    
+
     /// List contents of directory
     /// - Parameter url: Directory URL
     /// - Returns: Array of file URLs in the directory
@@ -39,7 +39,7 @@ protocol FileStorage: Sendable {
 final class FileStorageImpl: FileStorage {
     private nonisolated(unsafe) let fileManager: FileManager
     private let logger: Logger
-    
+
     init(
         fileManager: FileManager = .default,
         logger: Logger = .make(category: "Storage")
@@ -47,11 +47,11 @@ final class FileStorageImpl: FileStorage {
         self.fileManager = fileManager
         self.logger = logger
     }
-    
+
     func fileExists(at url: URL) -> Bool {
-        return fileManager.fileExists(atPath: url.path)
+        fileManager.fileExists(atPath: url.path)
     }
-    
+
     func deleteFile(at url: URL) throws {
         logger.info("Deleting file", metadata: ["path": url.path])
         do {
@@ -62,7 +62,7 @@ final class FileStorageImpl: FileStorage {
             throw error
         }
     }
-    
+
     func fileSize(at url: URL) throws -> Int64 {
         do {
             let attributes = try fileManager.attributesOfItem(atPath: url.path)
@@ -75,7 +75,7 @@ final class FileStorageImpl: FileStorage {
             throw error
         }
     }
-    
+
     func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool) throws {
         logger.info("Creating directory", metadata: ["path": url.path])
         do {
@@ -89,7 +89,7 @@ final class FileStorageImpl: FileStorage {
             throw error
         }
     }
-    
+
     func contentsOfDirectory(at url: URL) throws -> [URL] {
         do {
             let contents = try fileManager.contentsOfDirectory(

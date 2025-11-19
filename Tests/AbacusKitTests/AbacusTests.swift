@@ -1,7 +1,7 @@
-import XCTest
-import Quick
-import Nimble
 import CoreVideo
+import Nimble
+import Quick
+import XCTest
 @testable import AbacusKit
 
 /// Integration tests for the main Abacus SDK interface
@@ -10,7 +10,7 @@ final class AbacusSpec: QuickSpec {
         describe("Abacus") {
             var abacus: Abacus!
             var config: AbacusConfig!
-            
+
             beforeEach {
                 abacus = Abacus()
                 config = AbacusConfig(
@@ -18,30 +18,30 @@ final class AbacusSpec: QuickSpec {
                     modelDirectoryURL: FileManager.default.temporaryDirectory
                 )
             }
-            
+
             describe("initialization") {
                 it("should create instance successfully") {
                     expect(abacus).toNot(beNil())
                 }
             }
-            
+
             describe("getMetadata") {
                 it("should return metadata") {
                     waitUntil { done in
                         Task {
                             let metadata = await abacus.getMetadata()
-                            
+
                             expect(metadata.sdkVersion).toNot(beEmpty())
                             done()
                         }
                     }
                 }
             }
-            
+
             describe("predict without configuration") {
                 it("should throw notConfigured error") {
                     let pixelBuffer = Self.createPixelBuffer()
-                    
+
                     waitUntil { done in
                         Task {
                             do {
@@ -59,9 +59,9 @@ final class AbacusSpec: QuickSpec {
             }
         }
     }
-    
+
     // MARK: - Helper Methods
-    
+
     static func createPixelBuffer() -> CVPixelBuffer {
         var pixelBuffer: CVPixelBuffer?
         let status = CVPixelBufferCreate(
@@ -72,11 +72,11 @@ final class AbacusSpec: QuickSpec {
             nil,
             &pixelBuffer
         )
-        
+
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
             fatalError("Failed to create pixel buffer")
         }
-        
+
         return buffer
     }
 }

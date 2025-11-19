@@ -48,5 +48,5 @@
 /// All public APIs are thread-safe and use Swift's structured concurrency.
 /// The SDK is designed to be used from any async context.
 
-@_exported import Foundation
 @_exported import CoreVideo
+@_exported import Foundation

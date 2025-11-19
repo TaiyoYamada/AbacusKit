@@ -11,7 +11,7 @@ let package = Package(
     name: "AbacusKit",
     platforms: [
         .iOS(.v17),
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .library(
@@ -32,7 +32,7 @@ let package = Package(
         // テスト: Quick & Nimble
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
-        
+
         // モック生成: Cuckoo
         .package(url: "https://github.com/Brightify/Cuckoo.git", from: "2.0.0"),
 
@@ -41,13 +41,14 @@ let package = Package(
     ],
     targets: [
         // MARK: - Swift Target
+
         .target(
             name: "AbacusKit",
             dependencies: [
                 "AbacusKitBridge",
                 "Resolver",
                 .product(name: "Logging", package: "swift-log"),
-                "Zip"
+                "Zip",
             ],
             path: "Sources/AbacusKit",
             swiftSettings: [
@@ -63,13 +64,14 @@ let package = Package(
         ),
 
         // MARK: - Bridge (Objective-C++/C++)
+
         // Note: Bridge is kept for OpenCV preprocessing support
         // LibTorch functionality has been replaced with CoreML
         .target(
             name: "AbacusKitBridge",
             dependencies: [],
             path: "Sources/AbacusKitBridge",
-            sources: ["TorchModule.mm"],  // Only compile .mm file
+            sources: ["TorchModule.mm"], // Only compile .mm file
             publicHeadersPath: "include",
             cxxSettings: [
                 .unsafeFlags(["-std=c++17"]),
@@ -80,13 +82,14 @@ let package = Package(
         ),
 
         // MARK: - Tests
+
         .testTarget(
             name: "AbacusKitTests",
             dependencies: [
                 "AbacusKit",
                 "Quick",
                 "Nimble",
-                .product(name: "Cuckoo", package: "Cuckoo")
+                .product(name: "Cuckoo", package: "Cuckoo"),
             ],
             path: "Tests/AbacusKitTests"
         ),
