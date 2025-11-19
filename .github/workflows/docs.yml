@@ -25,6 +25,7 @@ jobs:
             generate-documentation \
             --target AbacusKit \
             --output-path Docs \
+            --hosting-base-path AbacusKit \
             --disable-indexing
 
       # GitHub Pages 用 artifact としてアップロード
