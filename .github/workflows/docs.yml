@@ -13,11 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Swift
-        uses: swift-actions/setup-swift@v1
-        with:
-          swift-version: "6.0"
+      # Homebrew 更新（古い runner で `brew` が壊れるのを防ぐ）
+      - name: Update Homebrew
+        run: brew update
 
+      # DocC ドキュメント生成
       - name: Generate DocC
         run: |
           swift package \
@@ -27,6 +27,7 @@ jobs:
             --output-path Docs \
             --disable-indexing
 
+      # GitHub Pages 用 artifact としてアップロード
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
