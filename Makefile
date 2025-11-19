@@ -1,15 +1,16 @@
 # Makefile for AbacusKit
 
-.PHONY: build test clean mocks help
+.PHONY: build test clean mocks help export-model
 
 # デフォルトターゲット
 help:
 	@echo "AbacusKit - Available commands:"
-	@echo "  make build    - Build the project"
-	@echo "  make test     - Run all tests"
-	@echo "  make mocks    - Generate mocks with Cuckoo"
-	@echo "  make clean    - Clean build artifacts"
-	@echo "  make docs     - Generate documentation"
+	@echo "  make build         - Build the project"
+	@echo "  make test          - Run all tests"
+	@echo "  make mocks         - Generate mocks with Cuckoo"
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make docs          - Generate documentation"
+	@echo "  make export-model  - Convert TorchScript to ExecuTorch (.pt → .pte)"
 
 # プロジェクトをビルド
 build:
@@ -57,3 +58,15 @@ setup:
 	@echo "Setting up development environment..."
 	swift package resolve
 	@echo "Setup complete!"
+
+# モデルを ExecuTorch 形式に変換
+export-model:
+	@echo "Converting TorchScript model to ExecuTorch format..."
+	@if [ ! -f "Model/abacus.pt" ]; then \
+		echo "❌ Error: Model/abacus.pt not found"; \
+		exit 1; \
+	fi
+	python3 Scripts/export_to_executorch.py \
+		--input Model/abacus.pt \
+		--output Model/abacus.pte
+	@echo "✅ Model exported successfully!"

@@ -55,17 +55,29 @@ let package = Package(
         .target(
             name: "AbacusKitBridge",
             dependencies: [
-                .product(name: "ExecuTorchKit", package: "executorch")
+                // コアランタイム（ExecuTorch）
+                .product(name: "executorch", package: "executorch"),
+
+                // ハードウェアアクセラレーションバックエンド
+                .product(name: "backend_coreml", package: "executorch"),
+                .product(name: "backend_mps", package: "executorch"),
+                .product(name: "backend_xnnpack", package: "executorch"),
+
+                // 一般的な高速化カーネル
+                .product(name: "kernels_optimized", package: "executorch"),
+                .product(name: "kernels_quantized", package: "executorch"),
             ],
             path: "Sources/AbacusKitBridge",
-            sources: ["TorchModule.mm"],
+            sources: ["ExecuTorchModule.mm"],
             publicHeadersPath: "include",
             cxxSettings: [
                 .unsafeFlags(["-std=c++17"]),
                 .unsafeFlags(["-Wno-shorten-64-to-32"]),
                 .unsafeFlags(["-Wno-deprecated-declarations"]),
+                .unsafeFlags(["-Wno-unused-parameter"]),
             ],
             linkerSettings: [
+                .unsafeFlags(["-Wl,-all_load"]),
                 .linkedFramework("Accelerate"),
                 .linkedLibrary("c++"),
             ]

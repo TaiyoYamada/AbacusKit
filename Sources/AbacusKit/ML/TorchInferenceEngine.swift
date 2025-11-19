@@ -9,8 +9,8 @@ public enum AbacusCellState: Int, Sendable {
     case empty = 2  // 玉なし
 }
 
-/// TorchScript 推論結果
-public struct TorchInferenceResult: Sendable {
+/// ExecuTorch 推論結果
+public struct ExecuTorchInferenceResult: Sendable {
     public let predictedState: AbacusCellState
     public let probabilities: [Float]
     public let inferenceTimeMs: Double
@@ -22,68 +22,53 @@ public struct TorchInferenceResult: Sendable {
     }
 }
 
-/// TorchScript 推論エンジンのエラー
-public enum TorchInferenceError: Error, Sendable {
+/// ExecuTorch 推論エンジンのエラー
+public enum ExecuTorchInferenceError: Error, Sendable {
     case modelNotLoaded
     case modelLoadFailed(String)
     case inferenceFailed(String)
     case invalidInput(String)
 }
 
-/// TorchScript を使った推論エンジン（Swift API）
-public actor TorchInferenceEngine {
-    private let bridge: TorchModuleBridge
+/// ExecuTorch を使った推論エンジン（Swift API）
+public actor ExecuTorchInferenceEngine {
+    private let bridge: ExecuTorchModuleBridge
     private var isLoaded: Bool = false
     
     public init() {
-        self.bridge = TorchModuleBridge()
+        self.bridge = ExecuTorchModuleBridge()
     }
     
     /// モデルをロードする
-    /// - Parameter modelPath: .pt ファイルのパス
+    /// - Parameter modelPath: .pte ファイルのパス
     public func loadModel(at modelPath: URL) throws {
-        var error: NSError?
-        let success = bridge.loadModel(atPath: modelPath.path, error: &error)
-        
-        if let error = error {
-            throw TorchInferenceError.modelLoadFailed(error.localizedDescription)
+        do {
+            try bridge.loadModel(atPath: modelPath.path)
+            isLoaded = true
+        } catch {
+            throw ExecuTorchInferenceError.modelLoadFailed(error.localizedDescription)
         }
-        
-        guard success else {
-            throw TorchInferenceError.modelLoadFailed("Unknown error")
-        }
-        
-        isLoaded = true
     }
     
     /// 推論を実行する
     /// - Parameter pixelBuffer: 入力画像（224x224 RGB）
     /// - Returns: 推論結果
-    public func predict(pixelBuffer: CVPixelBuffer) throws -> TorchInferenceResult {
+    public func predict(pixelBuffer: CVPixelBuffer) throws -> ExecuTorchInferenceResult {
         guard isLoaded else {
-            throw TorchInferenceError.modelNotLoaded
+            throw ExecuTorchInferenceError.modelNotLoaded
         }
         
-        var result = TorchPredictionResult()
-        var error: NSError?
+        var result = ExecuTorchPredictionResult()
         
-        let success = bridge.predict(
-            with: pixelBuffer,
-            result: &result,
-            error: &error
-        )
-        
-        if let error = error {
-            throw TorchInferenceError.inferenceFailed(error.localizedDescription)
-        }
-        
-        guard success else {
-            throw TorchInferenceError.inferenceFailed("Unknown error")
+        do {
+            try bridge.predict(with: pixelBuffer, result: &result)
+        } catch {
+            throw ExecuTorchInferenceError.inferenceFailed(error.localizedDescription)
         }
         
         // 結果を Swift 型に変換
         guard let state = AbacusCellState(rawValue: Int(result.predictedClass)) else {
-            throw TorchInferenceError.inferenceFailed("Invalid predicted class")
+            throw ExecuTorchInferenceError.inferenceFailed("Invalid predicted class")
         }
         
         let probabilities = [
@@ -92,7 +77,7 @@ public actor TorchInferenceEngine {
             result.probabilities.2
         ]
         
-        return TorchInferenceResult(
+        return ExecuTorchInferenceResult(
             predictedState: state,
             probabilities: probabilities,
             inferenceTimeMs: result.inferenceTimeMs

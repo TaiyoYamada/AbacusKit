@@ -2,11 +2,11 @@ import XCTest
 import CoreVideo
 @testable import AbacusKit
 
-final class TorchInferenceEngineTests: XCTestCase {
-    var engine: TorchInferenceEngine!
+final class ExecuTorchInferenceEngineTests: XCTestCase {
+    var engine: ExecuTorchInferenceEngine!
     
     override func setUp() async throws {
-        engine = TorchInferenceEngine()
+        engine = ExecuTorchInferenceEngine()
     }
     
     override func tearDown() async throws {
@@ -21,19 +21,19 @@ final class TorchInferenceEngineTests: XCTestCase {
         
         // When: モデルをロードする
         // Then: エラーが発生しない
-        // Note: 実際のテストでは本物の .pt ファイルが必要
+        // Note: 実際のテストでは本物の .pte ファイルが必要
         // XCTAssertNoThrow(try await engine.loadModel(at: modelPath))
     }
     
     func testLoadModel_WithInvalidPath_ShouldThrowError() async throws {
         // Given: 存在しないパス
-        let invalidPath = URL(fileURLWithPath: "/invalid/path/model.pt")
+        let invalidPath = URL(fileURLWithPath: "/invalid/path/model.pte")
         
         // When & Then: エラーがスローされる
         do {
             try await engine.loadModel(at: invalidPath)
             XCTFail("Expected error to be thrown")
-        } catch TorchInferenceError.modelLoadFailed {
+        } catch ExecuTorchInferenceError.modelLoadFailed {
             // Success
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -50,7 +50,7 @@ final class TorchInferenceEngineTests: XCTestCase {
         do {
             _ = try await engine.predict(pixelBuffer: pixelBuffer)
             XCTFail("Expected error to be thrown")
-        } catch TorchInferenceError.modelNotLoaded {
+        } catch ExecuTorchInferenceError.modelNotLoaded {
             // Success
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -96,6 +96,6 @@ final class TorchInferenceEngineTests: XCTestCase {
     private func createMockModelPath() -> URL {
         // テスト用のモックパス
         // 実際のテストでは Bundle.module.url(forResource:withExtension:) を使用
-        return URL(fileURLWithPath: "/tmp/mock_model.pt")
+        return URL(fileURLWithPath: "/tmp/mock_model.pte")
     }
 }
