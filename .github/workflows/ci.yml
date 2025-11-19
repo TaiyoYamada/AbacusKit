@@ -16,36 +16,38 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # リポジトリをチェックアウト
+      # リポジトリ取得
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Swift のセットアップ
+      # Swift のセットアップ（Xcode に依存しないため安定）
       - name: Setup Swift
         uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
 
-      # Homebrew で Mint をインストール
-      - name: Install Mint
-        run: brew install mint
+      # Homebrew 更新（macOS Runner では基本必要）
+      - name: Update Homebrew
+        run: brew update
 
-      # Mint 経由で SwiftLint / SwiftFormat をインストール
+      # Linter / Formatter インストール（prebuilt なので高速＆壊れない）
       - name: Install SwiftLint & SwiftFormat
         run: |
-          mint install realm/SwiftLint
-          mint install nicklockwood/SwiftFormat
+          brew install swiftlint
+          brew install swiftformat
 
-      # SwiftLint を実行
+      # SwiftLint 実行
       - name: Run SwiftLint
-        run: mint run swiftlint
+        run: swiftlint
 
-      # SwiftFormat のチェック（自動整形はしない）
+      # SwiftFormat のチェック（整形チェックのみ）
       - name: Check SwiftFormat
-        run: mint run swiftformat --lint .
+        run: swiftformat --lint .
 
-      # ビルド
+      # SwiftPM プロジェクトをビルド
       - name: Build
-        run: swift build
+        run: swift build --configuration debug
 
-      # テスト実行
+      # ユニットテスト
       - name: Test
-        run: swift test
+        run: swift test --parallel
