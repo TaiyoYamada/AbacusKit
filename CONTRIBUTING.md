@@ -1,102 +1,102 @@
 # Contributing to AbacusKit
 
-AbacusKitへの貢献を歓迎します！このガイドでは、プロジェクトへの貢献方法について説明します。
+We welcome contributions to AbacusKit! This guide explains how to contribute to the project.
 
-## 開発環境のセットアップ
+## Development Environment Setup
 
-### 必要な環境
+### Requirements
 
-- macOS 14.0以上
-- Xcode 16.0以上
-- Swift 6.0以上
+- macOS 14.0 or later
+- Xcode 16.0 or later
+- Swift 6.0 or later
 
-### セットアップ手順
+### Setup Steps
 
 ```bash
-# リポジトリをクローン
+# Clone the repository
 git clone https://github.com/yourusername/AbacusKit.git
 cd AbacusKit
 
-# 依存関係を解決
+# Resolve dependencies
 make setup
 
-# モックを生成
+# Generate mocks
 make mocks
 
-# ビルド
+# Build
 make build
 
-# テストを実行
+# Run tests
 make test
 ```
 
-## 開発ワークフロー
+## Development Workflow
 
-### 1. ブランチの作成
+### 1. Creating a Branch
 
 ```bash
-# 新機能の場合
+# For new features
 git checkout -b feature/your-feature-name
 
-# バグ修正の場合
+# For bug fixes
 git checkout -b fix/bug-description
 ```
 
-### 2. コーディング規約
+### 2. Coding Conventions
 
 #### Swift Style Guide
 
-- Swift API Design Guidelinesに従う
-- SwiftLintの設定に準拠
-- 命名規則:
-  - クラス/構造体: PascalCase
-  - メソッド/変数: camelCase
-  - プロトコル: 名詞または形容詞
-  - 定数: camelCase
+- Follow Swift API Design Guidelines
+- Comply with SwiftLint configuration
+- Naming conventions:
+  - Classes/Structs: PascalCase
+  - Methods/Variables: camelCase
+  - Protocols: Nouns or adjectives
+  - Constants: camelCase
 
-#### アーキテクチャ原則
+#### Architecture Principles
 
-- **SOLID原則**を遵守
-- **Clean Architecture**のレイヤー分離を維持
-- すべての依存関係は**プロトコル経由**
-- **Dependency Injection**を使用
+- Adhere to **SOLID principles**
+- Maintain **Clean Architecture** layer separation
+- All dependencies through **protocols**
+- Use **Dependency Injection**
 
-#### ドキュメント
+#### Documentation
 
-すべてのpublic APIには**SwiftDocC**形式のドキュメントを記述：
+Write **SwiftDocC** format documentation for all public APIs:
 
 ```swift
-/// メソッドの概要
+/// Method summary
 ///
-/// 詳細な説明をここに記述します。
+/// Detailed description goes here.
 ///
 /// - Parameters:
-///   - param1: パラメータの説明
-///   - param2: パラメータの説明
-/// - Returns: 戻り値の説明
-/// - Throws: スローされるエラーの説明
+///   - param1: Parameter description
+///   - param2: Parameter description
+/// - Returns: Return value description
+/// - Throws: Description of errors thrown
 public func myMethod(param1: String, param2: Int) throws -> Result {
-    // 実装
+    // Implementation
 }
 ```
 
-実装の詳細には日本語コメントを使用可能：
+Implementation details can use comments in any language:
 
 ```swift
-// ここでモデルをキャッシュから読み込む
+// Load model from cache here
 let cachedModel = await cache.getCurrentModelURL()
 ```
 
-### 3. テストの作成
+### 3. Writing Tests
 
-#### テストの必須要件
+#### Test Requirements
 
-- すべての新機能にはテストが必要
-- テストカバレッジは80%以上を維持
-- Quick/Nimbleを使用したBDDスタイル
-- Cuckooでモックを生成
+- All new features require tests
+- Maintain test coverage above 80%
+- BDD style using Quick/Nimble
+- Generate mocks with Cuckoo
 
-#### テストの書き方
+#### How to Write Tests
 
 ```swift
 import Quick
@@ -135,23 +135,23 @@ final class MyFeatureSpec: QuickSpec {
 }
 ```
 
-#### モックの生成
+#### Generating Mocks
 
-新しいプロトコルを追加した場合：
+When adding new protocols:
 
 ```bash
-# モックを再生成
+# Regenerate mocks
 make mocks
 
-# テストを実行して確認
+# Run tests to verify
 make test
 ```
 
-### 4. コミット
+### 4. Committing
 
-#### コミットメッセージ規約
+#### Commit Message Conventions
 
-Conventional Commitsに従う：
+Follow Conventional Commits:
 
 ```
 <type>(<scope>): <subject>
@@ -162,15 +162,15 @@ Conventional Commitsに従う：
 ```
 
 **Type:**
-- `feat`: 新機能
-- `fix`: バグ修正
-- `docs`: ドキュメントのみの変更
-- `style`: コードの意味に影響しない変更（フォーマットなど）
-- `refactor`: バグ修正や機能追加を伴わないコード変更
-- `test`: テストの追加や修正
-- `chore`: ビルドプロセスやツールの変更
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that don't affect code meaning (formatting, etc.)
+- `refactor`: Code changes without bug fixes or feature additions
+- `test`: Adding or modifying tests
+- `chore`: Changes to build process or tools
 
-**例:**
+**Examples:**
 
 ```bash
 git commit -m "feat(ml): add model preloading support"
@@ -178,74 +178,74 @@ git commit -m "fix(networking): handle timeout errors correctly"
 git commit -m "docs(readme): update installation instructions"
 ```
 
-### 5. プルリクエスト
+### 5. Pull Requests
 
-#### PR作成前のチェックリスト
+#### Pre-PR Checklist
 
-- [ ] すべてのテストがパス (`make test`)
-- [ ] ビルドが成功 (`make build`)
-- [ ] SwiftDocCドキュメントを追加
-- [ ] 変更内容をCHANGELOG.mdに記載
-- [ ] コードレビューの準備完了
+- [ ] All tests pass (`make test`)
+- [ ] Build succeeds (`make build`)
+- [ ] SwiftDocC documentation added
+- [ ] Changes documented in CHANGELOG.md
+- [ ] Ready for code review
 
-#### PRテンプレート
+#### PR Template
 
 ```markdown
-## 変更内容
+## Changes
 
-<!-- 変更内容の概要を記述 -->
+<!-- Describe the changes made -->
 
-## 動機と背景
+## Motivation and Context
 
-<!-- なぜこの変更が必要か -->
+<!-- Why is this change needed? -->
 
-## 変更の種類
+## Type of Change
 
-- [ ] バグ修正
-- [ ] 新機能
-- [ ] 破壊的変更
-- [ ] ドキュメント更新
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
 
-## テスト方法
+## Testing
 
-<!-- この変更をどのようにテストしたか -->
+<!-- How was this change tested? -->
 
-## チェックリスト
+## Checklist
 
-- [ ] テストを追加/更新した
-- [ ] ドキュメントを更新した
-- [ ] CHANGELOG.mdを更新した
-- [ ] すべてのテストがパスする
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] CHANGELOG.md updated
+- [ ] All tests pass
 ```
 
-## コードレビュープロセス
+## Code Review Process
 
-1. PRを作成すると自動的にCIが実行されます
-2. 最低1人のメンテナーによるレビューが必要
-3. すべてのコメントに対応してください
-4. 承認後、メンテナーがマージします
+1. CI runs automatically when PR is created
+2. At least one maintainer review required
+3. Address all comments
+4. Maintainer will merge after approval
 
-## リリースプロセス
+## Release Process
 
-1. バージョン番号を更新（Semantic Versioning）
-2. CHANGELOG.mdを更新
-3. タグを作成: `git tag v1.0.0`
-4. タグをプッシュ: `git push origin v1.0.0`
+1. Update version number (Semantic Versioning)
+2. Update CHANGELOG.md
+3. Create tag: `git tag v1.0.0`
+4. Push tag: `git push origin v1.0.0`
 
-## 質問やサポート
+## Questions and Support
 
-- Issue: バグ報告や機能リクエスト
-- Discussions: 一般的な質問や議論
-- Email: メンテナーへの直接連絡
+- Issues: Bug reports and feature requests
+- Discussions: General questions and discussions
+- Email: Direct contact with maintainers
 
-## 行動規範
+## Code of Conduct
 
-すべての貢献者は[Code of Conduct](CODE_OF_CONDUCT.md)に従ってください。
+All contributors must follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## ライセンス
+## License
 
-貢献したコードはMITライセンスの下で公開されます。
+Contributed code will be released under the MIT License.
 
 ---
 
-貢献いただきありがとうございます！ 🎉
+Thank you for your contributions! 🎉
