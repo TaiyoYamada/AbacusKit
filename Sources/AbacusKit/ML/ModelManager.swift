@@ -22,7 +22,7 @@ protocol ModelManager: Sendable {
     func isModelLoaded() async -> Bool
 }
 
-extension CVPixelBuffer: @unchecked Sendable {}
+extension CVPixelBuffer: @retroactive @unchecked Sendable {}
 
 /// Implementation of ModelManager using CoreML
 actor ModelManagerImpl: ModelManager {

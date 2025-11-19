@@ -35,6 +35,9 @@ let package = Package(
         
         // モック生成: Cuckoo
         .package(url: "https://github.com/Brightify/Cuckoo.git", from: "2.0.0"),
+
+        // DocC プラグイン
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
     ],
     targets: [
         // MARK: - Swift Target
