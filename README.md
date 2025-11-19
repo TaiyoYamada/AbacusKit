@@ -12,9 +12,6 @@ A production-grade iOS SDK for real-time CoreML inference with automatic model u
 - **Automatic Updates**: Download and cache models from S3 with version management
 - **Clean Architecture**: SOLID principles with protocol-driven design
 - **Fully Testable**: 100% mockable through dependency injection
-- **Swift 6**: Strict concurrency with async/await throughout
-- **SwiftDocC**: Comprehensive API documentation
-- **Type Safe**: Explicit error handling with typed errors
 
 ## Architecture
 
@@ -52,7 +49,7 @@ Add AbacusKit to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/AbacusKit.git", from: "1.0.0")
+    .package(url: "https://github.com/TaiyoYamada/AbacusKit.git", from: "1.0.0")
 ]
 ```
 
