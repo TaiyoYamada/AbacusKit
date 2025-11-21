@@ -13,33 +13,6 @@ A production-grade iOS SDK for real-time CoreML inference with automatic model u
 - **Clean Architecture**: SOLID principles with protocol-driven design
 - **Fully Testable**: 100% mockable through dependency injection
 
-## Architecture
-
-AbacusKit follows Clean Architecture principles with clear separation of concerns:
-
-```
-┌─────────────────────────────────────────┐
-│        Presentation Layer               │
-│         (Public API - Abacus)           │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│          Use Case Layer                 │
-│    (AbacusCoordinator, ModelUpdater)    │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│          Interface Layer                │
-│  (Protocols: ModelManager, S3Downloader,│
-│   ModelCache, FileStorage, etc.)        │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│       Infrastructure Layer              │
-│  (Implementations: CoreML, URLSession,  │
-│   FileManager, UserDefaults)            │
-└─────────────────────────────────────────┘
-```
 
 ## Installation
 
@@ -57,74 +30,6 @@ Or add it via Xcode:
 1. File → Add Package Dependencies
 2. Enter the repository URL
 3. Select version and add to your target
-
-## Quick Start
-
-### Basic Usage
-
-```swift
-import AbacusKit
-
-// 1. Configure the SDK
-let config = AbacusConfig(
-    versionURL: URL(string: "https://s3.amazonaws.com/your-bucket/version.json")!,
-    modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-)
-
-// 2. Initialize AbacusKit
-let abacus = Abacus()
-try await abacus.configure(config: config)
-
-// 3. Perform inference
-let result = try await abacus.predict(pixelBuffer: pixelBuffer)
-print("Predicted value: \(result.value)")
-print("Confidence: \(result.confidence)")
-print("Inference time: \(result.inferenceTimeMs)ms")
-```
-
-### Camera Integration
-
-```swift
-import AVFoundation
-import AbacusKit
-
-class CameraViewController: UIViewController {
-    let abacus = Abacus()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        Task {
-            let config = AbacusConfig(
-                versionURL: URL(string: "https://your-s3-url/version.json")!,
-                modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            )
-            try await abacus.configure(config: config)
-        }
-    }
-}
-
-extension CameraViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
-    func captureOutput(
-        _ output: AVCaptureOutput,
-        didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
-    ) {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        
-        Task {
-            do {
-                let result = try await abacus.predict(pixelBuffer: pixelBuffer)
-                await MainActor.run {
-                    updateUI(with: result)
-                }
-            } catch {
-                print("Prediction failed: \(error)")
-            }
-        }
-    }
-}
-```
 
 ## Model Format
 
@@ -153,65 +58,6 @@ AbacusKit will automatically:
 4. Load into CoreML
 5. Cache for future use
 
-## Configuration
-
-### AbacusConfig
-
-```swift
-let config = AbacusConfig(
-    versionURL: URL(string: "https://s3.amazonaws.com/bucket/version.json")!,
-    modelDirectoryURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0],
-    forceUpdate: false  // Set to true to always download latest model
-)
-```
-
-### Supported Pixel Formats
-
-- `kCVPixelFormatType_32BGRA`
-- `kCVPixelFormatType_32RGBA`
-- `kCVPixelFormatType_24RGB`
-
-## Error Handling
-
-AbacusKit provides comprehensive error types:
-
-```swift
-do {
-    let result = try await abacus.predict(pixelBuffer: pixelBuffer)
-} catch AbacusError.notConfigured {
-    print("SDK not configured. Call configure() first.")
-} catch AbacusError.modelNotLoaded {
-    print("Model failed to load.")
-} catch AbacusError.preprocessingFailed(let reason) {
-    print("Invalid input: \(reason)")
-} catch AbacusError.inferenceFailed(let error) {
-    print("Inference failed: \(error)")
-} catch {
-    print("Unexpected error: \(error)")
-}
-```
-
-## Testing
-
-AbacusKit is designed for testability with protocol-driven architecture:
-
-```swift
-import XCTest
-@testable import AbacusKit
-
-class MyTests: XCTestCase {
-    func testPrediction() async throws {
-        // Use mock implementations
-        let mockModelManager = MockModelManager()
-        mockModelManager.predictResult = .success([42.0, 0.95])
-        
-        // Test your code with mocks
-        // ...
-    }
-}
-```
-
-All protocols have corresponding mock implementations in the test target.
 
 ## Performance
 
@@ -249,10 +95,6 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 ## License
 
 AbacusKit is released under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Credits
-
-Developed with ❤️ following Clean Architecture and SOLID principles.
 
 ## Support
 
