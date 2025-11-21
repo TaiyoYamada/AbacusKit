@@ -99,8 +99,8 @@ AbacusKit is released under the MIT License. See [LICENSE](LICENSE) for details.
 ## Support
 
 For issues and questions:
-- Open an issue on [GitHub](https://github.com/yourusername/AbacusKit/issues)
-- Check the [documentation](https://yourusername.github.io/AbacusKit)
+- Open an issue on [GitHub](https://github.com/TaiyoYamada/AbacusKit/issues)
+- Check the [documentation](https://taiyoyamada.github.io/AbacusKit/documentation/abacuskit/)
 
 ---
 
