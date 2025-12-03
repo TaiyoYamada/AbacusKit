@@ -1,5 +1,5 @@
 {
-  "originHash" : "24f350af1b2b4de9ee6a036963c7a13cf1f6f1641d8b567be59e91c591547f88",
+  "originHash" : "b3ae1095f384724f4c979e737be2f2e1ed0f72cfe322cfafb6c059d90fbdbf19",
   "pins" : [
     {
       "identity" : "aexml",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pytorch/executorch.git",
       "state" : {
-        "branch" : "swiftpm-1.0.0",
-        "revision" : "b0e55219a8a6f14991f9ea20caefef20db39b8e0"
+        "branch" : "swiftpm-1.0.1",
+        "revision" : "c2a9829a239eda7061e7ce02aaa49ae14488d23b"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "ce592ae52f982c847a4efc0dd881cc9eb32d29f2",
-        "version" : "1.6.4"
+        "revision" : "ca538143e2dc2b5996c34b9322a1ed9def1d7747",
+        "version" : "1.7.0"
       }
     },
     {
