@@ -18,7 +18,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/pytorch/executorch.git",
-            branch: "swiftpm-1.0.0"
+            branch: "main"
         ),
         .package(url: "https://github.com/hmlongco/Resolver.git", from: "1.5.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
