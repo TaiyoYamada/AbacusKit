@@ -3,6 +3,14 @@
 
 import PackageDescription
 
+// GitHub Releases からダウンロードする xcframework の設定
+// 初回リリース時に checksum を計算して設定する必要があります
+let execuTorchURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/ExecuTorch.xcframework.zip"
+let execuTorchChecksum = "PLACEHOLDER_CHECKSUM_EXECUTORCH"
+
+let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/opencv2.xcframework.zip"
+let opencvChecksum = "PLACEHOLDER_CHECKSUM_OPENCV"
+
 let package = Package(
     name: "AbacusKit",
     platforms: [
@@ -24,11 +32,28 @@ let package = Package(
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
     ],
     targets: [
+        // MARK: - Binary Targets (xcframework)
+        
+        // ExecuTorch - PyTorch モデル推論ランタイム
+        .binaryTarget(
+            name: "ExecuTorch",
+            url: execuTorchURL,
+            checksum: execuTorchChecksum
+        ),
+        
+        // OpenCV - 画像処理ライブラリ
+        .binaryTarget(
+            name: "opencv2",
+            url: opencvURL,
+            checksum: opencvChecksum
+        ),
+        
         // MARK: - AbacusKit (Swift)
         .target(
             name: "AbacusKit",
             dependencies: [
                 "AbacusVision",
+                "ExecuTorch",
             ],
             path: "Sources/AbacusKit",
             swiftSettings: [
@@ -45,7 +70,9 @@ let package = Package(
         // MARK: - AbacusVision (C++)
         .target(
             name: "AbacusVision",
-            dependencies: [],
+            dependencies: [
+                "opencv2",
+            ],
             path: "Sources/AbacusVision",
             sources: [
                 "src/AbacusVision.cpp",
@@ -64,8 +91,6 @@ let package = Package(
                 .linkedFramework("Accelerate"),
                 .linkedFramework("CoreVideo"),
                 .linkedLibrary("c++"),
-                // OpenCV.xcframework はアプリ側で提供
-                // ExecuTorch runtime はアプリ側で提供
             ]
         ),
         
