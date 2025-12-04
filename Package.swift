@@ -1,5 +1,5 @@
 // swift-tools-version: 6.0
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// AbacusKit - そろばん認識 SDK
 
 import PackageDescription
 
@@ -16,24 +16,19 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pytorch/executorch.git", branch: "swiftpm-1.0.1"),
-        .package(url: "https://github.com/hmlongco/Resolver.git", from: "1.5.0"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
-        .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
+        // ドキュメント生成
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
+        
+        // テスト
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
-        .package(url: "https://github.com/Brightify/Cuckoo.git", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
     ],
     targets: [
-        // MARK: - Swift Target
+        // MARK: - AbacusKit (Swift)
         .target(
             name: "AbacusKit",
             dependencies: [
-                "AbacusKitBridge",
-                "Resolver",
-                .product(name: "Logging", package: "swift-log"),
-                "Zip",
+                "AbacusVision",
             ],
             path: "Sources/AbacusKit",
             swiftSettings: [
@@ -44,50 +39,43 @@ let package = Package(
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("Accelerate"),
                 .linkedFramework("CoreML"),
-                .linkedFramework("MetalPerformanceShaders"),
             ]
         ),
-
-        // MARK: - Bridge (Objective-C++/C++)
+        
+        // MARK: - AbacusVision (C++)
         .target(
-            name: "AbacusKitBridge",
-            dependencies: [
-                // コアランタイム（ExecuTorch）
-                .product(name: "executorch", package: "executorch"),
-
-                // ハードウェアアクセラレーションバックエンド
-                .product(name: "backend_coreml", package: "executorch"),
-                .product(name: "backend_mps", package: "executorch"),
-                .product(name: "backend_xnnpack", package: "executorch"),
-
-                // 一般的な高速化カーネル
-                .product(name: "kernels_optimized", package: "executorch"),
-                .product(name: "kernels_quantized", package: "executorch"),
+            name: "AbacusVision",
+            dependencies: [],
+            path: "Sources/AbacusVision",
+            sources: [
+                "src/AbacusVision.cpp",
+                "src/ImagePreprocessor.cpp",
+                "src/SorobanDetector.cpp",
+                "src/TensorConverter.cpp",
             ],
-            path: "Sources/AbacusKitBridge",
-            sources: ["ExecuTorchModule.mm"],
             publicHeadersPath: "include",
             cxxSettings: [
+                .headerSearchPath("include"),
                 .unsafeFlags(["-std=c++17"]),
                 .unsafeFlags(["-Wno-shorten-64-to-32"]),
                 .unsafeFlags(["-Wno-deprecated-declarations"]),
-                .unsafeFlags(["-Wno-unused-parameter"]),
             ],
             linkerSettings: [
-                .unsafeFlags(["-Wl,-all_load"]),
                 .linkedFramework("Accelerate"),
+                .linkedFramework("CoreVideo"),
                 .linkedLibrary("c++"),
+                // OpenCV.xcframework はアプリ側で提供
+                // ExecuTorch runtime はアプリ側で提供
             ]
         ),
+        
         // MARK: - Tests
-
         .testTarget(
             name: "AbacusKitTests",
             dependencies: [
                 "AbacusKit",
                 "Quick",
                 "Nimble",
-                .product(name: "Cuckoo", package: "Cuckoo"),
             ],
             path: "Tests/AbacusKitTests"
         ),

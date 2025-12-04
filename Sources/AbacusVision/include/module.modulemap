@@ -1,0 +1,12 @@
+module AbacusVision {
+    header "AbacusVision.hpp"
+    header "VisionTypes.hpp"
+    header "ImagePreprocessor.hpp"
+    header "SorobanDetector.hpp"
+    header "TensorConverter.hpp"
+    
+    requires cplusplus
+    requires cplusplus17
+    
+    export *
+}
