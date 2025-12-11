@@ -15,7 +15,7 @@ let package = Package(
     products: [
         .library(
             name: "AbacusKit",
-            targets: ["AbacusKit"] 
+            targets: ["AbacusKit"]
         ),
     ],
     dependencies: [
@@ -25,15 +25,18 @@ let package = Package(
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
     ],
     targets: [
+
         // MARK: - Binary Targets (xcframework)
+
         // OpenCV - 画像処理ライブラリ
         .binaryTarget(
             name: "opencv2",
             url: opencvURL,
             checksum: opencvChecksum
         ),
-        
+
         // MARK: - AbacusKit (Swift)
+
         .target(
             name: "AbacusKit",
             dependencies: [
@@ -55,8 +58,9 @@ let package = Package(
                 .unsafeFlags(["-Wl,-all_load"]),
             ]
         ),
-        
+
         // MARK: - AbacusVision (C++)
+
         .target(
             name: "AbacusVision",
             dependencies: [
@@ -82,8 +86,9 @@ let package = Package(
                 .linkedLibrary("c++"),
             ]
         ),
-        
+
         // MARK: - Tests
+
         .testTarget(
             name: "AbacusKitTests",
             dependencies: [

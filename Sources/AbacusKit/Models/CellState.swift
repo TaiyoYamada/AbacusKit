@@ -37,9 +37,9 @@ public enum CellState: Int, Sendable, Codable, Hashable, CaseIterable {
     /// 日本語名
     public var localizedName: String {
         switch self {
-        case .upper: return "上"
-        case .lower: return "下"
-        case .empty: return "不明"
+        case .upper: "上"
+        case .lower: "下"
+        case .empty: "不明"
         }
     }
 }
@@ -47,9 +47,9 @@ public enum CellState: Int, Sendable, Codable, Hashable, CaseIterable {
 extension CellState: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .upper: return "Upper"
-        case .lower: return "Lower"
-        case .empty: return "Empty"
+        case .upper: "Upper"
+        case .lower: "Lower"
+        case .empty: "Empty"
         }
     }
 }

@@ -1,8 +1,8 @@
 // AbacusKit - SorobanLane
 // Swift 6.2
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// そろばんの1レーン（1桁）の完全な情報
 public struct SorobanLane: Sendable, Equatable {

@@ -5,7 +5,6 @@ import Foundation
 
 /// AbacusKit のエラー
 public enum AbacusError: Error, Sendable {
-
     // MARK: - 設定エラー
 
     /// 無効な設定
@@ -69,63 +68,64 @@ public enum AbacusError: Error, Sendable {
 extension AbacusError: LocalizedError {
     public var errorDescription: String? {
         switch self {
-        case .invalidConfiguration(let reason):
-            return "無効な設定: \(reason)"
+        case let .invalidConfiguration(reason):
+            "無効な設定: \(reason)"
 
-        case .modelNotFound(let path):
-            return "モデルが見つかりません: \(path)"
+        case let .modelNotFound(path):
+            "モデルが見つかりません: \(path)"
 
-        case .modelLoadFailed(let error):
-            return "モデルのロードに失敗: \(error.localizedDescription)"
+        case let .modelLoadFailed(error):
+            "モデルのロードに失敗: \(error.localizedDescription)"
 
         case .modelNotLoaded:
-            return "モデルがロードされていません"
+            "モデルがロードされていません"
 
-        case .invalidInput(let reason):
-            return "無効な入力: \(reason)"
+        case let .invalidInput(reason):
+            "無効な入力: \(reason)"
 
-        case .unsupportedPixelFormat(let format):
-            return "サポートされていないピクセルフォーマット: \(format)"
+        case let .unsupportedPixelFormat(format):
+            "サポートされていないピクセルフォーマット: \(format)"
 
         case .frameNotDetected:
-            return "そろばんフレームが検出できませんでした"
+            "そろばんフレームが検出できませんでした"
 
-        case .laneExtractionFailed(let reason):
-            return "レーン分割に失敗: \(reason)"
+        case let .laneExtractionFailed(reason):
+            "レーン分割に失敗: \(reason)"
 
-        case .preprocessingFailed(let reason, let code):
-            return "前処理に失敗 (\(code)): \(reason)"
+        case let .preprocessingFailed(reason, code):
+            "前処理に失敗 (\(code)): \(reason)"
 
-        case .inferenceFailed(let error):
-            return "推論に失敗: \(error.localizedDescription)"
+        case let .inferenceFailed(error):
+            "推論に失敗: \(error.localizedDescription)"
 
-        case .tensorConversionFailed(let reason):
-            return "テンソル変換に失敗: \(reason)"
+        case let .tensorConversionFailed(reason):
+            "テンソル変換に失敗: \(reason)"
 
-        case .lowConfidence(let confidence, let threshold):
-            return "信頼度が低すぎます (\(String(format: "%.1f%%", confidence * 100)) < \(String(format: "%.1f%%", threshold * 100)))"
+        case let .lowConfidence(confidence, threshold):
+            "信頼度が低すぎます (\(String(format: "%.1f%%", confidence * 100)) < \(String(format: "%.1f%%", threshold * 100)))"
 
-        case .invalidResult(let reason):
-            return "無効な結果: \(reason)"
+        case let .invalidResult(reason):
+            "無効な結果: \(reason)"
 
         case .outOfMemory:
-            return "メモリ不足"
+            "メモリ不足"
 
-        case .internalError(let message):
-            return "内部エラー: \(message)"
+        case let .internalError(message):
+            "内部エラー: \(message)"
         }
     }
 
     public var recoverySuggestion: String? {
         switch self {
         case .frameNotDetected:
-            return "そろばんがカメラに写っているか確認してください"
+            "そろばんがカメラに写っているか確認してください"
         case .lowConfidence:
-            return "照明を改善するか、カメラを近づけてください"
-        case .modelNotFound, .modelNotLoaded:
-            return "アプリを再インストールしてください"
+            "照明を改善するか、カメラを近づけてください"
+        case .modelNotFound,
+             .modelNotLoaded:
+            "アプリを再インストールしてください"
         default:
-            return nil
+            nil
         }
     }
 }
@@ -136,12 +136,16 @@ extension AbacusError {
     /// このエラーがリトライ可能か
     public var isRetryable: Bool {
         switch self {
-        case .frameNotDetected, .lowConfidence, .laneExtractionFailed:
-            return true
-        case .modelNotLoaded, .modelNotFound, .invalidConfiguration:
-            return false
+        case .frameNotDetected,
+             .lowConfidence,
+             .laneExtractionFailed:
+            true
+        case .modelNotLoaded,
+             .modelNotFound,
+             .invalidConfiguration:
+            false
         default:
-            return false
+            false
         }
     }
 }

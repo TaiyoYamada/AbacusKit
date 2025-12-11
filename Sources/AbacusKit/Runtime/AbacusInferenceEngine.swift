@@ -7,10 +7,9 @@ import Foundation
 ///
 /// ExecuTorch を使用してそろばんセルの状態を推論する。
 public actor AbacusInferenceEngine {
-
     // MARK: - Properties
 
-    private var modelLoaded: Bool = false
+    private var modelLoaded = false
     private var modelPath: URL?
     private let batchSize: Int
 
@@ -29,8 +28,8 @@ public actor AbacusInferenceEngine {
         }
 
         // TODO: ExecuTorchModuleBridge を使用してモデルをロード
-        self.modelPath = path
-        self.modelLoaded = true
+        modelPath = path
+        modelLoaded = true
     }
 
     /// モデルがロード済みか
@@ -41,13 +40,13 @@ public actor AbacusInferenceEngine {
     // MARK: - Inference
 
     /// 単一セルを推論
-    public func predict(tensorData: [Float]) async throws -> CellPrediction {
+    public func predict(tensorData _: [Float]) async throws -> CellPrediction {
         guard modelLoaded else {
             throw AbacusError.modelNotLoaded
         }
 
         // TODO: 実際の推論実装
-        return CellPrediction(
+        CellPrediction(
             predictedClass: .empty,
             probabilities: [0.33, 0.33, 0.34]
         )
@@ -91,12 +90,12 @@ public actor AbacusInferenceEngine {
     // MARK: - Private
 
     private func processBatch(
-        tensorData: [Float],
-        startIndex: Int,
+        tensorData _: [Float],
+        startIndex _: Int,
         count: Int
     ) async throws -> [CellPrediction] {
         // TODO: 実際のバッチ推論実装
-        return (0..<count).map { _ in
+        (0..<count).map { _ in
             CellPrediction(
                 predictedClass: .empty,
                 probabilities: [0.33, 0.33, 0.34]

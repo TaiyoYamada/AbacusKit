@@ -1,8 +1,8 @@
 // AbacusKit - SorobanDigit
 // Swift 6.2
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// そろばんの1桁分の情報
 ///
@@ -48,7 +48,7 @@ public struct SorobanDigit: Sendable, Equatable, Hashable {
         self.probabilities = probabilities
 
         // 値を計算
-        self.value = Self.calculateValue(upperBead: upperBead, lowerBeads: lowerBeads)
+        value = Self.calculateValue(upperBead: upperBead, lowerBeads: lowerBeads)
     }
 
     /// そろばんの値を計算

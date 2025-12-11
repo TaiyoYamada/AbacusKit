@@ -26,5 +26,5 @@
 /// print("信頼度: \(result.confidence)")
 /// ```
 
-@_exported import Foundation
 @_exported import CoreVideo
+@_exported import Foundation

@@ -1,12 +1,11 @@
 // AbacusKit - SorobanResult
 // Swift 6.2
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// そろばん認識の完全な結果
 public struct SorobanResult: Sendable, Equatable {
-
     // MARK: - 主要な結果
 
     /// 認識された数値
@@ -53,7 +52,7 @@ public struct SorobanResult: Sendable, Equatable {
         self.confidence = confidence
         self.frameRect = frameRect
         self.frameCorners = frameCorners
-        self.laneCount = lanes.count
+        laneCount = lanes.count
         self.timing = timing
         self.timestamp = timestamp
     }
@@ -100,7 +99,9 @@ public struct TimingBreakdown: Sendable, Equatable {
 
     /// FPS換算
     public var estimatedFPS: Double {
-        guard totalMs > 0 else { return 0 }
+        guard totalMs > 0 else {
+            return 0
+        }
         return 1000.0 / totalMs
     }
 

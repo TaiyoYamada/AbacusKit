@@ -1,9 +1,9 @@
 // AbacusKit - AbacusRecognizer
 // Swift 6.2
 
-import Foundation
-import CoreVideo
 import CoreGraphics
+import CoreVideo
+import Foundation
 
 /// そろばん認識エンジン
 ///
@@ -19,7 +19,6 @@ import CoreGraphics
 /// print("認識値: \(result.value)")
 /// ```
 public actor AbacusRecognizer {
-
     // MARK: - Dependencies
 
     private var configuration: AbacusConfiguration
@@ -29,34 +28,34 @@ public actor AbacusRecognizer {
 
     // MARK: - State
 
-    private var isConfigured: Bool = false
-    private var frameCount: Int = 0
+    private var isConfigured = false
+    private var frameCount = 0
 
     // MARK: - Initialization
 
     /// デフォルト設定で初期化
     public init() {
-        self.configuration = .default
-        self.interpreter = SorobanInterpreter()
-        self.visionProcessor = VisionProcessor(configuration: .default)
-        self.inferenceEngine = AbacusInferenceEngine()
-        self.isConfigured = true
+        configuration = .default
+        interpreter = SorobanInterpreter()
+        visionProcessor = VisionProcessor(configuration: .default)
+        inferenceEngine = AbacusInferenceEngine()
+        isConfigured = true
     }
 
     /// カスタム設定で初期化
     public init(configuration: AbacusConfiguration) {
         self.configuration = configuration
-        self.interpreter = SorobanInterpreter()
-        self.visionProcessor = VisionProcessor(configuration: configuration)
-        self.inferenceEngine = AbacusInferenceEngine()
-        self.isConfigured = true
+        interpreter = SorobanInterpreter()
+        visionProcessor = VisionProcessor(configuration: configuration)
+        inferenceEngine = AbacusInferenceEngine()
+        isConfigured = true
     }
 
     // MARK: - Configuration
 
     /// 設定を更新
     public func configure(_ config: AbacusConfiguration) async throws {
-        self.configuration = config
+        configuration = config
         visionProcessor?.updateConfiguration(config)
 
         if let modelPath = config.modelPath {
@@ -82,7 +81,7 @@ public actor AbacusRecognizer {
         }
 
         frameCount += 1
-        if configuration.frameSkipInterval > 1 && frameCount % configuration.frameSkipInterval != 0 {
+        if configuration.frameSkipInterval > 1, frameCount % configuration.frameSkipInterval != 0 {
             throw AbacusError.frameNotDetected
         }
 
@@ -158,7 +157,7 @@ public actor AbacusRecognizer {
     /// 連続認識（安定化付き）
     public func recognizeStabilized(
         pixelBuffer: CVPixelBuffer,
-        consecutiveCount: Int = 3
+        consecutiveCount _: Int = 3
     ) async throws -> SorobanResult? {
         let result = try await recognize(pixelBuffer: pixelBuffer)
         return result
@@ -168,14 +167,14 @@ public actor AbacusRecognizer {
 
     private func logPerformance(timing: TimingBreakdown) {
         print("""
-            [AbacusKit] Performance:
-              Preprocessing: \(String(format: "%.1f", timing.preprocessingMs))ms
-              Detection: \(String(format: "%.1f", timing.detectionMs))ms
-              Inference: \(String(format: "%.1f", timing.inferenceMs))ms
-              Postprocessing: \(String(format: "%.1f", timing.postprocessingMs))ms
-              Total: \(String(format: "%.1f", timing.totalMs))ms
-              FPS: \(String(format: "%.1f", timing.estimatedFPS))
-            """)
+        [AbacusKit] Performance:
+          Preprocessing: \(String(format: "%.1f", timing.preprocessingMs))ms
+          Detection: \(String(format: "%.1f", timing.detectionMs))ms
+          Inference: \(String(format: "%.1f", timing.inferenceMs))ms
+          Postprocessing: \(String(format: "%.1f", timing.postprocessingMs))ms
+          Total: \(String(format: "%.1f", timing.totalMs))ms
+          FPS: \(String(format: "%.1f", timing.estimatedFPS))
+        """)
     }
 }
 
@@ -191,7 +190,7 @@ final class VisionProcessor: @unchecked Sendable {
         let frameCorners: [CGPoint]
         let laneCount: Int
         let laneBoundingBoxes: [CGRect]
-        let tensorData: [Float]  // Sendable のために配列に変更
+        let tensorData: [Float] // Sendable のために配列に変更
         let cellCount: Int
         let detectionTimeMs: Double
     }
@@ -201,10 +200,10 @@ final class VisionProcessor: @unchecked Sendable {
     }
 
     func updateConfiguration(_ config: AbacusConfiguration) {
-        self.configuration = config
+        configuration = config
     }
 
-    func process(pixelBuffer: CVPixelBuffer) throws -> VisionResult {
+    func process(pixelBuffer _: CVPixelBuffer) throws -> VisionResult {
         // TODO: AbacusVision C++ モジュールを呼び出す
         throw AbacusError.frameNotDetected
     }

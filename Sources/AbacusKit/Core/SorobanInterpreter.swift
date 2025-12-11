@@ -1,21 +1,22 @@
 // AbacusKit - SorobanInterpreter
 // Swift 6.2
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// そろばん値の解釈器
 ///
 /// セル状態から数値を計算する。可変レーン対応。
 public struct SorobanInterpreter: Sendable {
-
     public init() {}
 
     /// レーンリストから数値を計算
     /// - Parameter lanes: レーンのリスト（順不同）
     /// - Returns: 計算された整数値
     public func interpret(lanes: [SorobanLane]) -> Int {
-        guard !lanes.isEmpty else { return 0 }
+        guard !lanes.isEmpty else {
+            return 0
+        }
 
         // 右から順にソート
         let sortedLanes = lanes.sorted { $0.position < $1.position }
@@ -61,7 +62,8 @@ public struct SorobanInterpreter: Sendable {
         boundingBoxes: [CGRect]
     ) -> [SorobanLane] {
         guard predictions.count == laneCount * 5,
-              boundingBoxes.count == laneCount else {
+              boundingBoxes.count == laneCount
+        else {
             return []
         }
 

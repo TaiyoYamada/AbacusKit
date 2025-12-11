@@ -1,5 +1,5 @@
 {
-  "originHash" : "f9d753553d89c0926036dc0277544c820b69f92408e3a766311e8245c30e4be4",
+  "originHash" : "be0e36c4e497f1bde21ad3848c0a1c70c8c3aea2858cd4b1c029c2bc587db819",
   "pins" : [
     {
       "identity" : "cwlcatchexception",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pytorch/executorch.git",
       "state" : {
-        "branch" : "swiftpm-1.0.0",
-        "revision" : "9ffb0ac4c393a446424181d8063efa965170307b"
+        "branch" : "swiftpm-1.0.1",
+        "revision" : "c2a9829a239eda7061e7ce02aaa49ae14488d23b"
       }
     },
     {

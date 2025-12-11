@@ -5,7 +5,6 @@ import Foundation
 
 /// AbacusKit の設定
 public struct AbacusConfiguration: Sendable, Equatable {
-
     // MARK: - モデル設定
 
     /// モデルファイルのパス（nil = バンドル内モデル）
