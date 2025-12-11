@@ -46,7 +46,7 @@ public actor AbacusInferenceEngine {
         }
 
         // TODO: 実際の推論実装
-        CellPrediction(
+        return CellPrediction(
             predictedClass: .empty,
             probabilities: [0.33, 0.33, 0.34]
         )
@@ -95,7 +95,7 @@ public actor AbacusInferenceEngine {
         count: Int
     ) async throws -> [CellPrediction] {
         // TODO: 実際のバッチ推論実装
-        (0..<count).map { _ in
+        return (0..<count).map { _ in
             CellPrediction(
                 predictedClass: .empty,
                 probabilities: [0.33, 0.33, 0.34]

@@ -1,8 +1,8 @@
 // AbacusKit Tests
 // Swift 6.2
 
-@testable import AbacusKit
 import XCTest
+@testable import AbacusKit
 
 final class AbacusKitTests: XCTestCase {
     // MARK: - CellState Tests

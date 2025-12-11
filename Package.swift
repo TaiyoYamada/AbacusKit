@@ -25,7 +25,6 @@ let package = Package(
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
     ],
     targets: [
-
         // MARK: - Binary Targets (xcframework)
 
         // OpenCV - 画像処理ライブラリ
