@@ -3,19 +3,14 @@
 
 import PackageDescription
 
-// GitHub Releases からダウンロードする xcframework の設定
-// 初回リリース時に checksum を計算して設定する必要があります
-// let execuTorchURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/ExecuTorch.xcframework.zip"
-// let execuTorchChecksum = "PLACEHOLDER_CHECKSUM_EXECUTORCH"
-
-let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/opencv2.xcframework.zip"
-let opencvChecksum = "PLACEHOLDER_CHECKSUM_OPENCV"
+let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v0.0.1/opencv2.xcframework.zip"
+let opencvChecksum = "1bdc6cb6de340a0ad4fd406890c066f63da256cf2c29b9252aec1096b47a5639"
 
 let package = Package(
     name: "AbacusKit",
     platforms: [
         .iOS(.v17),
-        // .macOS(.v14),
+        .macOS(.v14),
     ],
     products: [
         .library(
@@ -24,21 +19,13 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/TaiyoYamada/ExecuTorch.git", from: "1.0.1"),
+        .package(url: "https://github.com/pytorch/executorch", from: "1.0.1"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
     ],
     targets: [
         // MARK: - Binary Targets (xcframework)
-        
-        // ExecuTorch - PyTorch モデル推論ランタイム
-        // .binaryTarget(
-        //     name: "ExecuTorch",
-        //     url: execuTorchURL,
-        //     checksum: execuTorchChecksum
-        // ),
-        
         // OpenCV - 画像処理ライブラリ
         .binaryTarget(
             name: "opencv2",
@@ -51,7 +38,7 @@ let package = Package(
             name: "AbacusKit",
             dependencies: [
                 "AbacusVision",
-                "ExecuTorch",
+                .product(name: "ExecuTorch", package: "executorch"),
             ],
             path: "Sources/AbacusKit",
             swiftSettings: [
