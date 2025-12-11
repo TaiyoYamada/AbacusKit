@@ -5,8 +5,8 @@ import PackageDescription
 
 // GitHub Releases からダウンロードする xcframework の設定
 // 初回リリース時に checksum を計算して設定する必要があります
-let execuTorchURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/ExecuTorch.xcframework.zip"
-let execuTorchChecksum = "PLACEHOLDER_CHECKSUM_EXECUTORCH"
+// let execuTorchURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/ExecuTorch.xcframework.zip"
+// let execuTorchChecksum = "PLACEHOLDER_CHECKSUM_EXECUTORCH"
 
 let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v1.0.0/opencv2.xcframework.zip"
 let opencvChecksum = "PLACEHOLDER_CHECKSUM_OPENCV"
@@ -15,19 +15,17 @@ let package = Package(
     name: "AbacusKit",
     platforms: [
         .iOS(.v17),
-        .macOS(.v14),
+        // .macOS(.v14),
     ],
     products: [
         .library(
             name: "AbacusKit",
-            targets: ["AbacusKit"]
+            targets: ["AbacusKit"] 
         ),
     ],
     dependencies: [
-        // ドキュメント生成
+        .package(url: "https://github.com/TaiyoYamada/ExecuTorch.git", from: "1.0.1"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
-        
-        // テスト
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
     ],
@@ -35,11 +33,11 @@ let package = Package(
         // MARK: - Binary Targets (xcframework)
         
         // ExecuTorch - PyTorch モデル推論ランタイム
-        .binaryTarget(
-            name: "ExecuTorch",
-            url: execuTorchURL,
-            checksum: execuTorchChecksum
-        ),
+        // .binaryTarget(
+        //     name: "ExecuTorch",
+        //     url: execuTorchURL,
+        //     checksum: execuTorchChecksum
+        // ),
         
         // OpenCV - 画像処理ライブラリ
         .binaryTarget(
