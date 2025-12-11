@@ -19,7 +19,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pytorch/executorch", from: "1.0.1"),
+        .package(url: "https://github.com/pytorch/executorch.git", branch: "swiftpm-1.0.1"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
         .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
         .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
@@ -38,7 +38,9 @@ let package = Package(
             name: "AbacusKit",
             dependencies: [
                 "AbacusVision",
-                .product(name: "ExecuTorch", package: "executorch"),
+                .product(name: "executorch", package: "executorch"),
+                .product(name: "backend_coreml", package: "executorch"),
+                .product(name: "kernels_optimized", package: "executorch"),
             ],
             path: "Sources/AbacusKit",
             swiftSettings: [
@@ -49,6 +51,8 @@ let package = Package(
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("Accelerate"),
                 .linkedFramework("CoreML"),
+                // Force load all symbols from static libraries to trigger backends and kernels registration
+                .unsafeFlags(["-Wl,-all_load"]),
             ]
         ),
         

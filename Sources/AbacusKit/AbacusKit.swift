@@ -19,7 +19,7 @@
 /// import AbacusKit
 ///
 /// let recognizer = try AbacusRecognizer()
-/// 
+///
 /// // カメラフレームから認識
 /// let result = try await recognizer.recognize(pixelBuffer: cameraFrame)
 /// print("認識値: \(result.value)")

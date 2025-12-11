@@ -22,18 +22,18 @@ import Foundation
 public enum CellState: Int, Sendable, Codable, Hashable, CaseIterable {
     /// 上位置（カウントしない）
     case upper = 0
-    
+
     /// 下位置（カウントする）
     case lower = 1
-    
+
     /// 検出不能
     case empty = 2
-    
+
     /// この状態が有効な値を持つか
     public var isValid: Bool {
         self != .empty
     }
-    
+
     /// 日本語名
     public var localizedName: String {
         switch self {
