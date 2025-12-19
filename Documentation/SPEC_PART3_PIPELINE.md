@@ -1,8 +1,8 @@
-# Part 3: 前処理・推論パイプライン
+# Part 3: Preprocessing and Inference Pipeline
 
-## 3.1 OpenCV 前処理フロー詳細
+## 3.1 OpenCV Preprocessing Flow Details
 
-### ステップ分解
+### Step Breakdown
 
 ```
 Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
@@ -11,7 +11,7 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 ┌─────────────────────────────────────────────────────┐
 │ cv::cvtColor(input, bgr, cv::COLOR_BGRA2BGR)        │
 │ • BGRA → BGR (24bit)                                │
-│ • 処理時間: < 1ms                                   │
+│ • Processing time: < 1ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 2: Resize (Maintain Aspect Ratio)
@@ -20,23 +20,23 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │ scale = 1280.0 / longEdge                           │
 │ cv::resize(input, resized, Size(), scale, scale)    │
 │ • 1920x1080 → 1280x720                              │
-│ • 処理時間: < 2ms                                   │
+│ • Processing time: < 2ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 3: Grayscale Conversion
 ┌─────────────────────────────────────────────────────┐
 │ cv::cvtColor(resized, gray, cv::COLOR_BGR2GRAY)     │
 │ • RGB → 8bit grayscale                              │
-│ • 処理時間: < 0.5ms                                 │
+│ • Processing time: < 0.5ms                          │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 4: Contrast Enhancement (CLAHE)
 ┌─────────────────────────────────────────────────────┐
 │ auto clahe = cv::createCLAHE(2.0, Size(8, 8))       │
 │ clahe->apply(gray, enhanced)                        │
-│ • 局所コントラスト強調                              │
-│ • 照明条件のばらつきを吸収                          │
-│ • 処理時間: < 3ms                                   │
+│ • Local contrast enhancement                        │
+│ • Absorbs lighting condition variations             │
+│ • Processing time: < 3ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 5: Adaptive Thresholding
@@ -49,8 +49,8 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │     11,  // blockSize                               │
 │     2    // C                                       │
 │ )                                                   │
-│ • そろばん玉を明確に分離                            │
-│ • 処理時間: < 2ms                                   │
+│ • Clearly separates soroban beads                   │
+│ • Processing time: < 2ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 6: Morphological Operations
@@ -60,8 +60,8 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │ )                                                   │
 │ cv::morphologyEx(binary, cleaned, MORPH_CLOSE, k)   │
 │ cv::morphologyEx(cleaned, cleaned, MORPH_OPEN, k)   │
-│ • ノイズ除去・穴埋め                                │
-│ • 処理時間: < 1ms                                   │
+│ • Noise removal and hole filling                    │
+│ • Processing time: < 1ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 7: Contour Detection
@@ -71,8 +71,8 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │     cv::RETR_EXTERNAL,                              │
 │     cv::CHAIN_APPROX_SIMPLE                         │
 │ )                                                   │
-│ • 外側輪郭のみ抽出                                  │
-│ • 処理時間: < 2ms                                   │
+│ • Extract only outer contours                       │
+│ • Processing time: < 2ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 8: Abacus Frame Detection
@@ -83,7 +83,7 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │                                                     │
 │     auto approx = cv::approxPolyDP(contour, eps)    │
 │     if (approx.size() == 4) {                       │
-│         // 四角形 → そろばんフレーム候補            │
+│         // Quadrilateral → soroban frame candidate  │
 │         auto rect = cv::minAreaRect(approx)         │
 │         float aspectRatio = rect.width / rect.height│
 │         if (isValidAbacusRatio(aspectRatio)) {      │
@@ -91,15 +91,15 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │         }                                           │
 │     }                                               │
 │ }                                                   │
-│ • 処理時間: < 2ms                                   │
+│ • Processing time: < 2ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 9: Perspective Transformation
 ┌─────────────────────────────────────────────────────┐
-│ // 4隅を検出・並べ替え                              │
+│ // Detect and sort 4 corners                        │
 │ auto corners = orderPoints(frameContour)            │
 │                                                     │
-│ // 変換先 (正規化されたそろばん)                    │
+│ // Destination (normalized soroban)                 │
 │ float dstWidth = 800, dstHeight = 200               │
 │ std::vector<Point2f> dstCorners = {                 │
 │     {0, 0}, {dstWidth, 0},                          │
@@ -109,36 +109,36 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │ auto M = cv::getPerspectiveTransform(corners, dst)  │
 │ cv::warpPerspective(original, warped, M,            │
 │     Size(dstWidth, dstHeight))                      │
-│ • 処理時間: < 2ms                                   │
+│ • Processing time: < 2ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 10: Column/Cell Segmentation
 ┌─────────────────────────────────────────────────────┐
-│ // 桁分割 (そろばんの構造に基づく)                  │
-│ int numDigits = 13  // 標準的なそろばん             │
+│ // Digit division (based on soroban structure)      │
+│ int numDigits = 13  // Standard soroban             │
 │ int digitWidth = warpedWidth / numDigits            │
 │                                                     │
 │ for (int d = 0; d < numDigits; d++) {               │
 │     Rect digitROI(d * digitWidth, 0,                │
 │                   digitWidth, warpedHeight)         │
 │                                                     │
-│     // 上珠 (1セル) + 下珠 (4セル) に分割           │
+│     // Split into upper bead (1 cell) + lower beads (4 cells) │
 │     extractUpperBead(warped(digitROI), cells)       │
 │     extractLowerBeads(warped(digitROI), cells)      │
 │ }                                                   │
-│ • 処理時間: < 3ms                                   │
+│ • Processing time: < 3ms                            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 11: Cell Normalization for Inference
 ┌─────────────────────────────────────────────────────┐
 │ for (auto& cell : cells) {                          │
-│     // リサイズ to 224x224                          │
+│     // Resize to 224x224                            │
 │     cv::resize(cell, resized, Size(224, 224))       │
 │                                                     │
 │     // BGR → RGB                                    │
 │     cv::cvtColor(resized, rgb, COLOR_BGR2RGB)       │
 │                                                     │
-│     // float32 変換 + ImageNet正規化                │
+│     // float32 conversion + ImageNet normalization  │
 │     rgb.convertTo(normalized, CV_32FC3, 1.0/255.0)  │
 │     // mean: [0.485, 0.456, 0.406]                  │
 │     // std : [0.229, 0.224, 0.225]                  │
@@ -147,16 +147,16 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 │     // HWC → CHW (PyTorch format)                   │
 │     convertToCHW(normalized, tensorOutput)          │
 │ }                                                   │
-│ • 処理時間: < 5ms (13桁分)                          │
+│ • Processing time: < 5ms (for 13 digits)            │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Output: float[N][3][224][224] (N = cell count)
 ```
 
-### 処理時間サマリー
+### Processing Time Summary
 
-| ステップ | 処理時間 | 累積 |
-|---------|---------|-----|
+| Step | Processing Time | Cumulative |
+|------|-----------------|------------|
 | Format Conversion | < 1ms | 1ms |
 | Resize | < 2ms | 3ms |
 | Grayscale | < 0.5ms | 3.5ms |
@@ -169,22 +169,22 @@ Input: CVPixelBuffer (1920x1080, BGRA, 30-60 FPS)
 | Cell Segmentation | < 3ms | 18.5ms |
 | Cell Normalization | < 5ms | **23.5ms** |
 
-**目標**: 30 FPS = 33.3ms/frame → 前処理に23.5ms使用可能 ✓
+**Target**: 30 FPS = 33.3ms/frame → 23.5ms available for preprocessing ✓
 
 ---
 
-## 3.2 ExecuTorch 推論パイプライン
+## 3.2 ExecuTorch Inference Pipeline
 
-### モデル仕様
+### Model Specification
 
-| 項目 | 値 |
-|------|-----|
-| 入力テンソル | `[1, 3, 224, 224]` float32 |
-| 出力テンソル | `[1, 3]` float32 (logits) |
-| クラス | 0: upper, 1: lower, 2: empty |
-| 推論バックエンド | CoreML / MPS / XNNPACK |
+| Item | Value |
+|------|-------|
+| Input Tensor | `[1, 3, 224, 224]` float32 |
+| Output Tensor | `[1, 3]` float32 (logits) |
+| Classes | 0: upper, 1: lower, 2: empty |
+| Inference Backend | CoreML / MPS / XNNPACK |
 
-### 推論フロー
+### Inference Flow
 
 ```
 Input: float[N][3][224][224] (N cells)
@@ -192,10 +192,10 @@ Input: float[N][3][224][224] (N cells)
     ▼ Step 1: Batch Strategy Decision
 ┌─────────────────────────────────────────────────────┐
 │ if (N <= 4) {                                       │
-│     // 少数セル → 個別推論                          │
+│     // Few cells → individual inference             │
 │     return runSequential(cells)                     │
 │ } else {                                            │
-│     // 多数セル → バッチ推論                        │
+│     // Many cells → batch inference                 │
 │     return runBatched(cells, batchSize=8)           │
 │ }                                                   │
 └─────────────────────────────────────────────────────┘
@@ -225,9 +225,9 @@ Input: float[N][3][224][224] (N cells)
 │                withInputs:@[inputVal]               │
 │                     error:&error]                   │
 │                                                     │
-│ // CoreML バックエンド: ~3ms/cell                   │
-│ // MPS バックエンド: ~5ms/cell                      │
-│ // XNNPACK バックエンド: ~10ms/cell                 │
+│ // CoreML backend: ~3ms/cell                        │
+│ // MPS backend: ~5ms/cell                           │
+│ // XNNPACK backend: ~10ms/cell                      │
 └─────────────────────────────────────────────────────┘
     │
     ▼ Step 4: Output Extraction
@@ -266,34 +266,34 @@ Input: float[N][3][224][224] (N cells)
     ▼ Output: [CellState, ...]
 ```
 
-### 推論時間サマリー
+### Inference Time Summary
 
-| バックエンド | 単一セル | 13セル (1桁) | 65セル (5桁) |
-|------------|---------|-------------|-------------|
+| Backend | Single Cell | 13 Cells (1 digit) | 65 Cells (5 digits) |
+|---------|-------------|--------------------|--------------------|
 | CoreML | 3ms | ~40ms | ~200ms |
 | MPS | 5ms | ~65ms | ~325ms |
 | XNNPACK | 10ms | ~130ms | ~650ms |
 
-**目標**: 30 FPS で 13 セル → CoreML 使用時に達成可能 ✓
+**Target**: 30 FPS with 13 cells → Achievable with CoreML ✓
 
 ---
 
-## 3.3 値解釈ロジック
+## 3.3 Value Interpretation Logic
 
-### そろばんの構造
+### Soroban Structure
 
 ```
 ┌─────────────────────────────────────────┐
-│  上珠 (天珠) - 1個 = 5                  │
+│  Upper bead (heaven bead) - 1 unit = 5  │
 │  ───────────────────────────────────    │
-│  下珠 (地珠) - 4個 = 1, 1, 1, 1         │
+│  Lower beads (earth beads) - 4 units = 1, 1, 1, 1 │
 └─────────────────────────────────────────┘
 
-桁の値 = (上珠が下がっている ? 5 : 0) + (下がっている下珠の数)
-範囲: 0 〜 9
+Digit value = (upper bead is down ? 5 : 0) + (number of lower beads that are down)
+Range: 0 - 9
 ```
 
-### 解釈アルゴリズム
+### Interpretation Algorithm
 
 ```swift
 struct AbacusInterpreter {
@@ -301,19 +301,19 @@ struct AbacusInterpreter {
         var value = 0
         var multiplier = 1
         
-        // 右から左へ (1の位から)
+        // Right to left (from ones place)
         for digitIndex in stride(from: digitCount - 1, through: 0, by: -1) {
-            let upperCell = cells[digitIndex * 5]  // 上珠
+            let upperCell = cells[digitIndex * 5]  // Upper bead
             let lowerCells = cells[(digitIndex * 5 + 1)..<(digitIndex * 5 + 5)]
             
             var digitValue = 0
             
-            // 上珠: lower = 5点
+            // Upper bead: lower = 5 points
             if upperCell == .lower {
                 digitValue += 5
             }
             
-            // 下珠: lower = 1点ずつ
+            // Lower beads: lower = 1 point each
             for cell in lowerCells {
                 if cell == .lower {
                     digitValue += 1

@@ -1,56 +1,56 @@
-# AbacusKit xcframework セットアップガイド
+# AbacusKit xcframework Setup Guide
 
-## 前提条件
+## Prerequisites
 
 - Xcode 15.0+
 - macOS 14+
-- Python 3.10+ (ExecuTorch ビルド用)
+- Python 3.10+ (for ExecuTorch build)
 
 ---
 
-## 1. ExecuTorch xcframework の入手
+## 1. Obtaining ExecuTorch xcframework
 
-### 方法A: SwiftPM ブランチから取得 (推奨)
+### Method A: Get from SwiftPM Branch (Recommended)
 
 ```bash
 git clone -b swiftpm-1.0.1 https://github.com/pytorch/executorch.git executorch-swiftpm
 cd executorch-swiftpm
 
-# Frameworks ディレクトリに xcframework が含まれる
+# Frameworks directory contains xcframeworks
 ls Frameworks/
 # → executorch.xcframework, backend_coreml.xcframework, etc.
 ```
 
-### 方法B: ソースからビルド
+### Method B: Build from Source
 
 ```bash
 git clone https://github.com/pytorch/executorch.git
 cd executorch
 git checkout v1.0.1
 
-# 依存関係をインストール
+# Install dependencies
 pip install cmake
 ./install_requirements.sh
 
-# iOS 用 xcframework をビルド
+# Build xcframework for iOS
 ./build/build_apple_frameworks.sh --Release
 
-# 出力確認
+# Check output
 ls cmake-out/
 # → executorch.xcframework
 ```
 
 ---
 
-## 2. OpenCV xcframework の入手
+## 2. Obtaining OpenCV xcframework
 
 ```bash
-# 公式リリースからダウンロード
+# Download from official release
 curl -LO https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-ios-framework.zip
 unzip opencv-4.12.0-ios-framework.zip
 
-# opencv2.framework が展開される
-# -> xcframework 形式に変換が必要な場合:
+# opencv2.framework will be extracted
+# -> If conversion to xcframework format is needed:
 xcodebuild -create-xcframework \
     -framework opencv2.framework \
     -output opencv2.xcframework
@@ -58,7 +58,7 @@ xcodebuild -create-xcframework \
 
 ---
 
-## 3. xcframework を zip 圧縮
+## 3. Compress xcframeworks to zip
 
 ```bash
 # ExecuTorch
@@ -70,40 +70,40 @@ zip -r opencv2.xcframework.zip opencv2.xcframework
 
 ---
 
-## 4. GitHub Releases へアップロード
+## 4. Upload to GitHub Releases
 
-1. https://github.com/TaiyoYamada/AbacusKit/releases にアクセス
-2. 「Draft a new release」をクリック
-3. Tag: `v1.0.0` を作成
+1. Go to https://github.com/TaiyoYamada/AbacusKit/releases
+2. Click "Draft a new release"
+3. Create tag: `v1.0.0`
 4. Title: `AbacusKit v1.0.0`
-5. 以下のファイルを添付:
+5. Attach the following files:
    - `ExecuTorch.xcframework.zip`
    - `opencv2.xcframework.zip`
-6. 「Publish release」をクリック
+6. Click "Publish release"
 
 ---
 
-## 5. checksum を計算して Package.swift を更新
+## 5. Calculate checksum and Update Package.swift
 
 ```bash
-# checksum を計算
+# Calculate checksums
 swift package compute-checksum ExecuTorch.xcframework.zip
-# 出力例: abc123def456...
+# Output example: abc123def456...
 
 swift package compute-checksum opencv2.xcframework.zip
-# 出力例: 789xyz...
+# Output example: 789xyz...
 ```
 
-Package.swift の以下の行を更新:
+Update the following lines in Package.swift:
 
 ```swift
-let execuTorchChecksum = "abc123def456..."  // ← 実際の値に置換
-let opencvChecksum = "789xyz..."            // ← 実際の値に置換
+let execuTorchChecksum = "abc123def456..."  // ← Replace with actual value
+let opencvChecksum = "789xyz..."            // ← Replace with actual value
 ```
 
 ---
 
-## 6. 動作確認
+## 6. Verify
 
 ```bash
 cd /path/to/AbacusKit
@@ -113,20 +113,20 @@ swift test
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### checksum が一致しない
+### Checksum Mismatch
 
 ```
 error: checksum of downloaded artifact does not match
 ```
 
-→ zip ファイルを再ダウンロードし、checksum を再計算してください。
+→ Re-download the zip file and recalculate the checksum.
 
-### ExecuTorch ビルドエラー
+### ExecuTorch Build Error
 
-→ Python 3.10+ と CMake が正しくインストールされているか確認してください。
+→ Verify that Python 3.10+ and CMake are properly installed.
 
-### OpenCV シンボルが見つからない
+### OpenCV Symbol Not Found
 
-→ opencv2.xcframework が正しい形式か確認してください。
+→ Verify that opencv2.xcframework is in the correct format.

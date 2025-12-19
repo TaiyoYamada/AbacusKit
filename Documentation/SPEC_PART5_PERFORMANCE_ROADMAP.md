@@ -1,16 +1,16 @@
-# Part 5: パフォーマンス設計 & Part 6: 実装ロードマップ
+# Part 5: Performance Design & Part 6: Implementation Roadmap
 
-## 5.1 パフォーマンス要件
+## 5.1 Performance Requirements
 
-| メトリクス | 目標値 | 現実的目標 |
-|-----------|--------|-----------|
-| フレームレート | 60 FPS | 30 FPS |
-| 1フレーム処理時間 | < 16.7ms | < 33.3ms |
-| メモリ使用量 | < 100MB | < 150MB |
-| モデルロード時間 | < 500ms | < 1000ms |
-| バッテリー消費 | Low | Medium |
+| Metric | Target | Realistic Target |
+|--------|--------|------------------|
+| Frame Rate | 60 FPS | 30 FPS |
+| Processing Time per Frame | < 16.7ms | < 33.3ms |
+| Memory Usage | < 100MB | < 150MB |
+| Model Load Time | < 500ms | < 1000ms |
+| Battery Consumption | Low | Medium |
 
-## 5.2 処理時間配分 (30 FPS目標)
+## 5.2 Processing Time Allocation (30 FPS Target)
 
 ```
 Total Budget: 33.3ms
@@ -38,9 +38,9 @@ Total Budget: 33.3ms
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 5.3 最適化戦略
+## 5.3 Optimization Strategies
 
-### 1. フレームスキップ
+### 1. Frame Skipping
 
 ```swift
 class FrameController {
@@ -53,11 +53,11 @@ class FrameController {
     }
 }
 
-// 60 FPS → 30 FPS 処理
+// 60 FPS → 30 FPS processing
 let controller = FrameController(skipInterval: 2)
 ```
 
-### 2. ROI キャッシュ
+### 2. ROI Caching
 
 ```swift
 actor ROICache {
@@ -65,7 +65,6 @@ actor ROICache {
     private var cacheHitCount = 0
     
     func getROI(currentFrame: CVPixelBuffer) -> CGRect? {
-        // 直前のROIが有効なら再利用
         if let roi = lastROI, cacheHitCount < 5 {
             cacheHitCount += 1
             return roi
@@ -75,31 +74,29 @@ actor ROICache {
 }
 ```
 
-### 3. バッチ推論
+### 3. Batch Inference
 
 ```swift
-// 個別推論 (遅い)
+// Individual inference (slow)
 for cell in cells {
     results.append(try engine.predict(cell))
 }
 
-// バッチ推論 (速い)
+// Batch inference (fast)
 let batchedCells = cells.chunked(into: 8)
 for batch in batchedCells {
     results.append(contentsOf: try engine.predictBatch(batch))
 }
 ```
 
-### 4. メモリプール
+### 4. Memory Pool
 
 ```swift
 class TensorPool {
     private var available: [UnsafeMutablePointer<Float>] = []
     
     func acquire(size: Int) -> UnsafeMutablePointer<Float> {
-        if let ptr = available.popLast() {
-            return ptr
-        }
+        if let ptr = available.popLast() { return ptr }
         return UnsafeMutablePointer<Float>.allocate(capacity: size)
     }
     
@@ -111,81 +108,81 @@ class TensorPool {
 
 ---
 
-## 6.1 実装ロードマップ
+## 6.1 Implementation Roadmap
 
-### Phase 1: 基盤整備 (Week 1-2) 🔴 高優先度
+### Phase 1: Foundation (Week 1-2) 🔴 High Priority
 
-| タスク | 工数 | 依存 |
-|--------|------|------|
-| OpenCV.xcframework 作成・統合 | 3d | - |
-| AbacusVision C++ モジュール骨格 | 2d | 上記 |
-| 前処理パイプライン実装 (Step 1-6) | 3d | 上記 |
-| Swift-C ブリッジ実装 | 2d | 上記 |
+| Task | Effort | Dependencies |
+|------|--------|--------------|
+| Create/integrate OpenCV.xcframework | 3d | - |
+| AbacusVision C++ module skeleton | 2d | Above |
+| Preprocessing pipeline (Step 1-6) | 3d | Above |
+| Swift-C bridge implementation | 2d | Above |
 
-### Phase 2: そろばん検出 (Week 3-4) 🔴 高優先度
+### Phase 2: Soroban Detection (Week 3-4) 🔴 High Priority
 
-| タスク | 工数 | 依存 |
-|--------|------|------|
-| フレーム検出アルゴリズム | 3d | Phase 1 |
-| 射影変換実装 | 2d | 上記 |
-| セル分割ロジック | 3d | 上記 |
-| 単体テスト作成 | 2d | 上記 |
+| Task | Effort | Dependencies |
+|------|--------|--------------|
+| Frame detection algorithm | 3d | Phase 1 |
+| Perspective transform implementation | 2d | Above |
+| Cell division logic | 3d | Above |
+| Unit test creation | 2d | Above |
 
-### Phase 3: 推論統合 (Week 5-6) 🟡 中優先度
+### Phase 3: Inference Integration (Week 5-6) 🟡 Medium Priority
 
-| タスク | 工数 | 依存 |
-|--------|------|------|
-| ExecuTorch バッチ推論対応 | 2d | Phase 2 |
-| 値解釈ロジック実装 | 2d | 上記 |
-| Public API 統合 | 3d | 上記 |
-| E2E テスト作成 | 3d | 上記 |
+| Task | Effort | Dependencies |
+|------|--------|--------------|
+| ExecuTorch batch inference support | 2d | Phase 2 |
+| Value interpretation logic | 2d | Above |
+| Public API integration | 3d | Above |
+| E2E test creation | 3d | Above |
 
-### Phase 4: 安定化・最適化 (Week 7-8) 🟡 中優先度
+### Phase 4: Stabilization & Optimization (Week 7-8) 🟡 Medium Priority
 
-| タスク | 工数 | 依存 |
-|--------|------|------|
-| 連続認識安定化 | 3d | Phase 3 |
-| パフォーマンスチューニング | 3d | 上記 |
-| メモリ最適化 | 2d | 上記 |
-| バッテリー消費検証 | 2d | 上記 |
+| Task | Effort | Dependencies |
+|------|--------|--------------|
+| Continuous recognition stabilization | 3d | Phase 3 |
+| Performance tuning | 3d | Above |
+| Memory optimization | 2d | Above |
+| Battery consumption verification | 2d | Above |
 
-### Phase 5: 配布準備 (Week 9-10) 🟢 低優先度
+### Phase 5: Distribution Preparation (Week 9-10) 🟢 Low Priority
 
-| タスク | 工数 | 依存 |
-|--------|------|------|
-| GitHub Releases 更新機構 | 3d | Phase 4 |
-| ドキュメント整備 | 3d | 上記 |
-| サンプルアプリ作成 | 3d | 上記 |
-| CI/CD 構築 | 2d | 上記 |
-
----
-
-## 6.2 リスク分析
-
-| リスク | 影響度 | 発生確率 | 対策 |
-|--------|--------|---------|------|
-| OpenCV バイナリサイズ肥大 | 高 | 中 | 必要モジュールのみビルド |
-| ExecuTorch SPM 互換性問題 | 高 | 高 | XCFramework に切り替え |
-| 30 FPS 未達成 | 高 | 中 | フレームスキップ導入 |
-| そろばん検出精度低下 | 中 | 中 | 学習データ追加 |
-| メモリ不足 (古いデバイス) | 中 | 低 | 低解像度モード追加 |
+| Task | Effort | Dependencies |
+|------|--------|--------------|
+| GitHub Releases update mechanism | 3d | Phase 4 |
+| Documentation | 3d | Above |
+| Sample app creation | 3d | Above |
+| CI/CD setup | 2d | Above |
 
 ---
 
-## 6.3 現在の実装とのギャップ
+## 6.2 Risk Analysis
 
-| 項目 | 現在 | 目標 | 作業量 |
-|------|------|------|--------|
-| 前処理 | ImageNet正規化のみ | OpenCV フルパイプライン | **大** |
-| 検出 | なし | そろばんフレーム検出 | **大** |
-| セル分離 | なし | 自動桁・セル分割 | **大** |
-| 推論 | 3クラス分類 | バッチ推論 | 中 |
-| API | 2系統 (旧/新) | 統合API | 中 |
-| モデル配布 | S3 OTA | GitHub Releases | 小 |
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| OpenCV binary size bloat | High | Medium | Build only required modules |
+| ExecuTorch SPM compatibility | High | High | Switch to XCFramework |
+| 30 FPS not achieved | High | Medium | Introduce frame skipping |
+| Soroban detection accuracy drop | Medium | Medium | Add training data |
+| Memory shortage (older devices) | Medium | Low | Add low-resolution mode |
 
 ---
 
-## 6.4 推奨ディレクトリ構成 (最終形)
+## 6.3 Gap with Current Implementation
+
+| Item | Current | Target | Work Required |
+|------|---------|--------|---------------|
+| Preprocessing | ImageNet normalization only | OpenCV full pipeline | **Large** |
+| Detection | None | Soroban frame detection | **Large** |
+| Cell separation | None | Automatic digit/cell division | **Large** |
+| Inference | 3-class classification | Batch inference | Medium |
+| API | 2 systems (old/new) | Unified API | Medium |
+| Model distribution | S3 OTA | GitHub Releases | Small |
+
+---
+
+## 6.4 Recommended Directory Structure (Final)
 
 ```
 AbacusKit/
@@ -198,70 +195,42 @@ AbacusKit/
 ├── Sources/
 │   ├── AbacusKit/
 │   │   ├── Public/
-│   │   │   ├── AbacusRecognizer.swift
-│   │   │   ├── AbacusConfiguration.swift
-│   │   │   └── AbacusKitExports.swift
 │   │   ├── Domain/
-│   │   │   ├── AbacusResult.swift
-│   │   │   ├── CellState.swift
-│   │   │   └── DigitInfo.swift
 │   │   ├── Core/
-│   │   │   ├── AbacusInterpreter.swift
-│   │   │   ├── AbacusError.swift
-│   │   │   └── StabilizationStrategy.swift
 │   │   └── Internal/
-│   │       ├── VisionBridge.swift
-│   │       └── InferenceBridge.swift
 │   │
 │   ├── AbacusVision/
 │   │   ├── include/
-│   │   │   ├── AbacusVision.h
-│   │   │   ├── VisionTypes.h
-│   │   │   └── module.modulemap
 │   │   ├── src/
-│   │   │   ├── Preprocessor.cpp/.hpp
-│   │   │   ├── AbacusDetector.cpp/.hpp
-│   │   │   ├── CellExtractor.cpp/.hpp
-│   │   │   └── PerspectiveCorrector.cpp/.hpp
 │   │   └── bridge/
-│   │       └── AbacusVisionBridge.mm
 │   │
 │   └── AbacusInference/
 │       ├── include/
-│       │   ├── AbacusInference.h
-│       │   └── InferenceTypes.h
 │       └── src/
-│           ├── ExecuTorchEngine.mm
-│           ├── TensorConverter.mm
-│           └── BatchPredictor.mm
 │
 ├── Model/
 │   └── abacus_v1.pte
 │
 ├── Tests/
-│   ├── AbacusKitTests/
-│   ├── AbacusVisionTests/
-│   └── AbacusInferenceTests/
-│
 ├── Examples/
 │   └── AbacusSampleApp/
 │
 └── Frameworks/
-    ├── opencv2.xcframework (optional, App提供も可)
-    └── README_EXECUTORCH.md (Appへの組み込み手順)
+    ├── opencv2.xcframework (optional)
+    └── README_EXECUTORCH.md
 ```
 
 ---
 
-## 6.5 次のアクション
+## 6.5 Next Actions
 
-1. **今すぐ**: OpenCV.xcframework を作成し、SPM に統合
-2. **今週**: AbacusVision の骨格と前処理パイプライン実装開始
-3. **来週**: そろばんフレーム検出アルゴリズムの実装・テスト
-4. **2週後**: セル分割ロジックと推論統合
+1. **Immediately**: Create OpenCV.xcframework and integrate with SPM
+2. **This week**: Start AbacusVision skeleton and preprocessing pipeline
+3. **Next week**: Implement and test soroban frame detection algorithm
+4. **Week 2**: Cell division logic and inference integration
 
 ---
 
-**作成日**: 2025-12-04
-**バージョン**: 2.0
-**ステータス**: ドラフト（レビュー待ち）
+**Created**: 2025-12-04
+**Version**: 2.0
+**Status**: Draft (Pending Review)

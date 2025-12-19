@@ -2,7 +2,7 @@
 
 # AbacusKit
 
-### そろばん認識 SDK for iOS
+### Soroban Recognition SDK for iOS
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg?logo=swift&logoColor=white)](https://swift.org)
 [![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B%20|%20macOS%2014%2B-blue.svg)](https://developer.apple.com/ios/)
@@ -10,29 +10,29 @@
 [![ExecuTorch](https://img.shields.io/badge/ExecuTorch-1.0.1-red.svg)](https://pytorch.org/executorch/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.12.0-green.svg)](https://opencv.org/)
 
-**AbacusKit** はリアルタイムでそろばんを認識し、数値として取得できる iOS SDK です。  
-OpenCV による高速な画像前処理と ExecuTorch による高精度な推論を統合しています。
+**AbacusKit** is an iOS SDK that recognizes soroban (Japanese abacus) in real-time and retrieves values as numbers.  
+It integrates fast image preprocessing with OpenCV and high-accuracy inference with ExecuTorch.
 
-[特徴](#-特徴) •
-[インストール](#-インストール) •
-[使い方](#-使い方) •
-[ドキュメント](#-ドキュメント)
+[Features](#-features) •
+[Installation](#-installation) •
+[Usage](#-usage) •
+[Documentation](#-documentation)
 
 </div>
 
 ---
 
-## 🚀 特徴
+## 🚀 Features
 
-- **📷 可変レーン対応** - 1〜27桁のそろばんを自動検出
-- **⚡ リアルタイム処理** - 30FPS 以上の高速認識
-- **🎯 高精度** - OpenCV 前処理 + ExecuTorch 推論
-- **🧵 Swift 6 対応** - actor ベースの安全な設計
-- **📦 オールインワン** - ExecuTorch と OpenCV をバンドル
+- **📷 Variable Lane Support** - Automatically detect 1-27 digit soroban
+- **⚡ Real-time Processing** - High-speed recognition at 30+ FPS
+- **🎯 High Accuracy** - OpenCV preprocessing + ExecuTorch inference
+- **🧵 Swift 6 Ready** - Actor-based thread-safe design
+- **📦 All-in-One** - ExecuTorch and OpenCV bundled
 
 ---
 
-## 📦 インストール
+## 📦 Installation
 
 ### Swift Package Manager
 
@@ -42,33 +42,33 @@ dependencies: [
 ]
 ```
 
-> **注意**: 初回ビルド時に ExecuTorch と OpenCV の xcframework (~150MB) がダウンロードされます。
+> **Note**: ExecuTorch and OpenCV xcframeworks (~150MB) will be downloaded on first build.
 
 ---
 
-## 🏃 使い方
+## 🏃 Usage
 
-### 基本的な使用例
+### Basic Example
 
 ```swift
 import AbacusKit
 
-// 認識エンジンを初期化
+// Initialize the recognition engine
 let recognizer = AbacusRecognizer()
 
-// モデルをロード
+// Load the model
 try await recognizer.configure(.default)
 
-// カメラフレームから認識
+// Recognize from camera frame
 let result = try await recognizer.recognize(pixelBuffer: cameraFrame)
 
-print("認識値: \(result.value)")           // 例: 12345
-print("桁数: \(result.laneCount)")         // 例: 5
-print("信頼度: \(result.confidence)")      // 例: 0.95
-print("処理時間: \(result.timing.totalMs)ms")
+print("Recognized value: \(result.value)")           // e.g., 12345
+print("Number of lanes: \(result.laneCount)")        // e.g., 5
+print("Confidence: \(result.confidence)")            // e.g., 0.95
+print("Processing time: \(result.timing.totalMs)ms")
 ```
 
-### カメラ統合
+### Camera Integration
 
 ```swift
 import AbacusKit
@@ -89,9 +89,9 @@ class CameraViewController: UIViewController {
                     displayResult(result)
                 }
             } catch AbacusError.frameNotDetected {
-                // そろばんが検出されなかった - 次のフレームを待つ
+                // Soroban not detected - wait for next frame
             } catch {
-                print("エラー: \(error)")
+                print("Error: \(error)")
             }
         }
     }
@@ -100,14 +100,14 @@ class CameraViewController: UIViewController {
 
 ---
 
-## 📚 ドキュメント
+## 📚 Documentation
 
-| ドキュメント | 内容 |
-|------------|------|
-| [ARCHITECTURE.md](Documentation/ARCHITECTURE.md) | アーキテクチャ設計 |
-| [XCFRAMEWORK_SETUP.md](Documentation/XCFRAMEWORK_SETUP.md) | xcframework セットアップ |
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](Documentation/ARCHITECTURE.md) | Architecture design |
+| [XCFRAMEWORK_SETUP.md](Documentation/XCFRAMEWORK_SETUP.md) | xcframework setup |
 
-### API リファレンス
+### API Reference
 
 #### AbacusRecognizer
 
@@ -124,22 +124,22 @@ public actor AbacusRecognizer {
 
 ```swift
 public struct SorobanResult: Sendable {
-    public let value: Int              // 認識された数値
-    public let lanes: [SorobanLane]    // 各桁の情報
-    public let confidence: Float       // 全体信頼度 (0.0-1.0)
-    public let timing: TimingBreakdown // 処理時間
+    public let value: Int              // Recognized numeric value
+    public let lanes: [SorobanLane]    // Information for each digit
+    public let confidence: Float       // Overall confidence (0.0-1.0)
+    public let timing: TimingBreakdown // Processing time
 }
 ```
 
 #### AbacusConfiguration
 
 ```swift
-// プリセット
+// Presets
 let defaultConfig = AbacusConfiguration.default
 let fastConfig = AbacusConfiguration.fast
 let accurateConfig = AbacusConfiguration.highAccuracy
 
-// カスタム
+// Custom
 let custom = AbacusConfiguration(
     inferenceBackend: .coreml,
     confidenceThreshold: 0.8,
@@ -149,18 +149,18 @@ let custom = AbacusConfiguration(
 
 ---
 
-## ⚡ パフォーマンス
+## ⚡ Performance
 
-| 項目 | iPhone 15 Pro |
-|------|---------------|
-| 前処理 (OpenCV) | 10-15ms |
-| 推論 (ExecuTorch) | 6-10ms |
-| 合計 | 16-25ms |
+| Metric | iPhone 15 Pro |
+|--------|---------------|
+| Preprocessing (OpenCV) | 10-15ms |
+| Inference (ExecuTorch) | 6-10ms |
+| Total | 16-25ms |
 | FPS | 40-60 |
 
 ---
 
-## 🔧 要件
+## 🔧 Requirements
 
 - iOS 17.0+
 - macOS 14.0+
@@ -169,7 +169,7 @@ let custom = AbacusConfiguration(
 
 ---
 
-## 📄 ライセンス
+## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
 

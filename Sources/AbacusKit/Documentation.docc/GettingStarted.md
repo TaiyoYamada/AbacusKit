@@ -1,17 +1,16 @@
 # Getting Started with AbacusKit
 
-そろばん認識 SDK の使い方を学ぶ
+Learn how to use the Soroban Recognition SDK
 
 ## Overview
 
-AbacusKit を使用すると、カメラフレームからそろばんの状態を認識し、
-数値として取得できます。
+With AbacusKit, you can recognize the state of a soroban (Japanese abacus) from camera frames and retrieve the value as a number.
 
-## インストール
+## Installation
 
 ### Swift Package Manager
 
-`Package.swift` に以下を追加:
+Add the following to your `Package.swift`:
 
 ```swift
 dependencies: [
@@ -19,23 +18,23 @@ dependencies: [
 ]
 ```
 
-### 前提条件
+### Prerequisites
 
 - iOS 17.0+
 - Xcode 15.0+
 - Swift 6.0+
 
-## 基本的な使い方
+## Basic Usage
 
-### 1. 初期化
+### 1. Initialization
 
 ```swift
 import AbacusKit
 
-// デフォルト設定で初期化
+// Initialize with default configuration
 let recognizer = try AbacusRecognizer()
 
-// カスタム設定で初期化
+// Initialize with custom configuration
 let config = AbacusConfiguration(
     inferenceBackend: .coreml,
     confidenceThreshold: 0.8
@@ -43,26 +42,26 @@ let config = AbacusConfiguration(
 let customRecognizer = try AbacusRecognizer(configuration: config)
 ```
 
-### 2. 単一フレーム認識
+### 2. Single Frame Recognition
 
 ```swift
 func processFrame(_ pixelBuffer: CVPixelBuffer) async {
     do {
         let result = try await recognizer.recognize(pixelBuffer: pixelBuffer)
         
-        print("認識値: \(result.value)")
-        print("信頼度: \(String(format: "%.1f%%", result.confidence * 100))")
-        print("桁数: \(result.laneCount)")
+        print("Recognized value: \(result.value)")
+        print("Confidence: \(String(format: "%.1f%%", result.confidence * 100))")
+        print("Number of lanes: \(result.laneCount)")
         
     } catch AbacusError.frameNotDetected {
-        print("そろばんが見つかりません")
+        print("Soroban not found")
     } catch {
-        print("エラー: \(error)")
+        print("Error: \(error)")
     }
 }
 ```
 
-### 3. カメラ統合
+### 3. Camera Integration
 
 ```swift
 import AVFoundation
@@ -91,14 +90,14 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
                     updateUI(with: result)
                 }
             } catch {
-                // エラー処理
+                // Error handling
             }
         }
     }
 }
 ```
 
-## エラーハンドリング
+## Error Handling
 
 ```swift
 do {
@@ -106,14 +105,14 @@ do {
 } catch let error as AbacusError {
     switch error {
     case .frameNotDetected:
-        // 次のフレームを待つ
+        // Wait for next frame
         break
         
     case .lowConfidence(let conf, _):
-        showWarning("認識精度が低いです")
+        showWarning("Recognition accuracy is low")
         
     default:
-        print("エラー: \(error.localizedDescription)")
+        print("Error: \(error.localizedDescription)")
     }
 }
 ```

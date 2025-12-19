@@ -1,21 +1,20 @@
 # ``AbacusKit``
 
-そろばん認識 SDK - リアルタイムでそろばんの状態を数値に変換
+Soroban Recognition SDK - Real-time conversion of soroban state to numeric values
 
 ## Overview
 
-AbacusKit は、カメラフレームからそろばんを検出し、その状態を数値として認識する SDK です。
-OpenCV による高速な画像前処理と ExecuTorch による高精度な推論を組み合わせ、
-30FPS 以上のリアルタイム処理を実現します。
+AbacusKit is an SDK that detects soroban (Japanese abacus) from camera frames and recognizes their state as numeric values.
+It combines fast image preprocessing with OpenCV and high-accuracy inference with ExecuTorch to achieve real-time processing at 30+ FPS.
 
-### 主な機能
+### Key Features
 
-- **自動フレーム検出**: そろばんの外枠を自動検出し、射影変換で正規化
-- **可変レーン対応**: 1〜27桁の任意のそろばんに対応
-- **高速処理**: OpenCV + ExecuTorch で 30FPS 以上を達成
-- **Swift 6 対応**: モダンな Swift Concurrency に完全対応
+- **Automatic Frame Detection**: Automatically detect soroban frame and normalize with perspective transform
+- **Variable Lane Support**: Support for any soroban from 1 to 27 digits
+- **High-Speed Processing**: Achieve 30+ FPS with OpenCV + ExecuTorch
+- **Swift 6 Ready**: Full support for modern Swift Concurrency
 
-### アーキテクチャ
+### Architecture
 
 ```
 ┌─────────────────────────────────────┐

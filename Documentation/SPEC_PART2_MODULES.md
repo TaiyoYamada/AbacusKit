@@ -1,54 +1,54 @@
-# Part 2: モジュール構成と責務
+# Part 2: Module Structure and Responsibilities
 
-## 2.1 モジュール一覧
+## 2.1 Module List
 
 ```
 AbacusKit/
-├── AbacusKit          (Swift)    - Public API / ファサード
-├── AbacusVision       (C++)      - OpenCV 画像処理
-└── AbacusInference    (Obj-C++)  - ExecuTorch 推論
+├── AbacusKit          (Swift)    - Public API / Facade
+├── AbacusVision       (C++)      - OpenCV image processing
+└── AbacusInference    (Obj-C++)  - ExecuTorch inference
 ```
 
 ---
 
 ## 2.2 AbacusKit (Swift Layer)
 
-### 責務
+### Responsibilities
 
-- **Public API** の提供（アプリからの唯一のエントリポイント）
-- **設定管理**（モデルパス、パフォーマンス設定）
-- **ドメインモデル**（AbacusResult, CellState 等）
-- **オーケストレーション**（Vision → Inference → 解釈）
+- Provide **Public API** (the only entry point from the app)
+- **Configuration management** (model path, performance settings)
+- **Domain models** (AbacusResult, CellState, etc.)
+- **Orchestration** (Vision → Inference → Interpretation)
 
-### ファイル構成
+### File Structure
 
 ```
 AbacusKit/
 ├── Public/
-│   ├── AbacusRecognizer.swift      # メインファサード (actor)
-│   ├── AbacusConfiguration.swift   # 設定
+│   ├── AbacusRecognizer.swift      # Main facade (actor)
+│   ├── AbacusConfiguration.swift   # Configuration
 │   └── AbacusKitExports.swift      # @_exported import
 │
 ├── Domain/
-│   ├── AbacusResult.swift          # 認識結果
-│   ├── AbacusValue.swift           # そろばん値
-│   ├── CellState.swift             # セル状態 (upper/lower/empty)
-│   ├── DigitInfo.swift             # 桁情報
-│   └── BoundingBox.swift           # 領域情報
+│   ├── AbacusResult.swift          # Recognition result
+│   ├── AbacusValue.swift           # Soroban value
+│   ├── CellState.swift             # Cell state (upper/lower/empty)
+│   ├── DigitInfo.swift             # Digit information
+│   └── BoundingBox.swift           # Region information
 │
 ├── Core/
-│   ├── AbacusInterpreter.swift     # CellState[] → Int 変換
-│   ├── AbacusContainer.swift       # DI コンテナ
-│   └── AbacusError.swift           # エラー定義
+│   ├── AbacusInterpreter.swift     # CellState[] → Int conversion
+│   ├── AbacusContainer.swift       # DI container
+│   └── AbacusError.swift           # Error definitions
 │
 └── Internal/
-    ├── VisionBridge.swift          # AbacusVision の Swift ラッパー
-    └── InferenceBridge.swift       # AbacusInference の Swift ラッパー
+    ├── VisionBridge.swift          # Swift wrapper for AbacusVision
+    └── InferenceBridge.swift       # Swift wrapper for AbacusInference
 ```
 
-### 主要クラス
+### Main Classes
 
-#### AbacusRecognizer (ファサード)
+#### AbacusRecognizer (Facade)
 
 ```swift
 public actor AbacusRecognizer {
@@ -58,10 +58,10 @@ public actor AbacusRecognizer {
     
     public init(configuration: AbacusConfiguration) throws
     
-    /// フレームを認識
+    /// Recognize a frame
     public func recognize(pixelBuffer: CVPixelBuffer) async throws -> AbacusResult
     
-    /// 連続認識（安定化付き）
+    /// Continuous recognition (with stabilization)
     public func recognizeContinuous(
         pixelBuffer: CVPixelBuffer,
         stabilization: StabilizationStrategy
@@ -73,34 +73,34 @@ public actor AbacusRecognizer {
 
 ## 2.3 AbacusVision (C++ Layer)
 
-### 責務
+### Responsibilities
 
-- **画像前処理**（リサイズ、色変換、ノイズ除去）
-- **そろばん検出**（輪郭検出、フレーム認識）
-- **射影変換**（パースペクティブ補正）
-- **セル分割**（ROI 抽出）
+- **Image preprocessing** (resize, color conversion, noise removal)
+- **Soroban detection** (contour detection, frame recognition)
+- **Perspective transformation** (perspective correction)
+- **Cell division** (ROI extraction)
 
-### ファイル構成
+### File Structure
 
 ```
 AbacusVision/
 ├── include/
-│   ├── AbacusVision.h              # C インターフェース
-│   ├── VisionTypes.h               # C 構造体定義
-│   └── module.modulemap            # Swift インポート用
+│   ├── AbacusVision.h              # C interface
+│   ├── VisionTypes.h               # C struct definitions
+│   └── module.modulemap            # For Swift import
 │
 ├── src/
-│   ├── Preprocessor.cpp            # 前処理パイプライン
+│   ├── Preprocessor.cpp            # Preprocessing pipeline
 │   ├── Preprocessor.hpp
-│   ├── AbacusDetector.cpp          # そろばんフレーム検出
+│   ├── AbacusDetector.cpp          # Soroban frame detection
 │   ├── AbacusDetector.hpp
-│   ├── CellExtractor.cpp           # セル領域抽出
+│   ├── CellExtractor.cpp           # Cell region extraction
 │   ├── CellExtractor.hpp
-│   ├── PerspectiveCorrector.cpp    # 射影変換
+│   ├── PerspectiveCorrector.cpp    # Perspective transformation
 │   └── PerspectiveCorrector.hpp
 │
 └── bridge/
-    └── AbacusVisionBridge.mm       # Swift 呼び出し用 ObjC ラッパー
+    └── AbacusVisionBridge.mm       # ObjC wrapper for Swift calls
 ```
 
 ### C Public Interface
@@ -120,39 +120,39 @@ typedef struct {
 } AVTensor;
 
 typedef struct {
-    AVTensor* cells;  // 抽出されたセル配列
+    AVTensor* cells;  // Array of extracted cells
     int cellCount;
-    AVRect* cellRects; // 各セルの元画像上の位置
-    float confidence;  // 検出信頼度
+    AVRect* cellRects; // Position of each cell on original image
+    float confidence;  // Detection confidence
 } AVExtractionResult;
 
-// 初期化・解放
+// Initialization / Cleanup
 void* av_create_processor(void);
 void av_destroy_processor(void* processor);
 
-// 処理
+// Processing
 int av_process_frame(
     void* processor,
     const void* pixelBuffer,  // CVPixelBufferRef
     AVExtractionResult* result
 );
 
-// メモリ解放
+// Memory cleanup
 void av_free_result(AVExtractionResult* result);
 ```
 
-### 前処理パイプライン詳細
+### Preprocessing Pipeline Details
 
 ```cpp
 class Preprocessor {
 public:
     struct Config {
-        int targetLongEdge = 1280;      // リサイズ目標
-        bool enableCLAHE = true;         // コントラスト強調
+        int targetLongEdge = 1280;      // Resize target
+        bool enableCLAHE = true;         // Contrast enhancement
         double claheClipLimit = 2.0;
-        int adaptiveBlockSize = 11;      // 適応的二値化
+        int adaptiveBlockSize = 11;      // Adaptive binarization
         double adaptiveC = 2;
-        int morphKernelSize = 3;         // モルフォロジー
+        int morphKernelSize = 3;         // Morphology
     };
     
     cv::Mat preprocess(const cv::Mat& input, const Config& config);
@@ -170,25 +170,25 @@ private:
 
 ## 2.4 AbacusInference (Obj-C++ Layer)
 
-### 責務
+### Responsibilities
 
-- **ExecuTorch モデルロード**
-- **テンソル作成・正規化**
-- **推論実行**
-- **出力解釈（softmax, argmax）**
+- **ExecuTorch model loading**
+- **Tensor creation and normalization**
+- **Inference execution**
+- **Output interpretation (softmax, argmax)**
 
-### ファイル構成
+### File Structure
 
 ```
 AbacusInference/
 ├── include/
-│   ├── AbacusInference.h           # ObjC インターフェース
-│   └── InferenceTypes.h            # 構造体定義
+│   ├── AbacusInference.h           # ObjC interface
+│   └── InferenceTypes.h            # Struct definitions
 │
 └── src/
-    ├── ExecuTorchEngine.mm         # 推論エンジン
-    ├── TensorConverter.mm          # テンソル変換
-    └── BatchPredictor.mm           # バッチ推論最適化
+    ├── ExecuTorchEngine.mm         # Inference engine
+    ├── TensorConverter.mm          # Tensor conversion
+    └── BatchPredictor.mm           # Batch inference optimization
 ```
 
 ### ObjC Interface
@@ -206,12 +206,12 @@ typedef struct {
 
 - (BOOL)loadModelAtPath:(NSString *)path error:(NSError **)error;
 
-// 単一セル推論
+// Single cell inference
 - (BOOL)predictSingleCell:(const float *)tensorData
                    result:(AIInferenceResult *)result
                     error:(NSError **)error;
 
-// バッチ推論（複数セル一括）
+// Batch inference (multiple cells at once)
 - (BOOL)predictBatch:(const float *)tensorData
            cellCount:(NSInteger)count
              results:(AIInferenceResult *)results
@@ -224,7 +224,7 @@ typedef struct {
 
 ---
 
-## 2.5 モジュール間インターフェース
+## 2.5 Inter-Module Interfaces
 
 ### VisionBridge (Swift ↔ C++)
 
@@ -280,11 +280,11 @@ final class InferenceBridge: @unchecked Sendable {
 
 ---
 
-## 2.6 依存関係マトリクス
+## 2.6 Dependency Matrix
 
 | From \ To | AbacusKit | AbacusVision | AbacusInference | OpenCV | ExecuTorch |
 |-----------|-----------|--------------|-----------------|--------|------------|
 | **AbacusKit** | - | ✓ | ✓ | - | - |
 | **AbacusVision** | - | - | - | ✓ | - |
-| **AbacusInference** | - | - | - | - | ✓ (App提供) |
-| **App** | ✓ | - | - | - | ✓ (埋め込み) |
+| **AbacusInference** | - | - | - | - | ✓ (App-provided) |
+| **App** | ✓ | - | - | - | ✓ (embedded) |

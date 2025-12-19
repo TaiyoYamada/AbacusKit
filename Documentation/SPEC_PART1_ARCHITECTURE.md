@@ -1,6 +1,6 @@
-# Part 1: アーキテクチャ概要
+# Part 1: Architecture Overview
 
-## 1.1 システム概要図
+## 1.1 System Overview Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -14,7 +14,7 @@
 │  │                           AbacusKit SDK                                  │ │
 │  │  ┌─────────────────────────────────────────────────────────────────┐    │ │
 │  │  │  AbacusKit (Swift) - Public API Layer                           │    │ │
-│  │  │  • AbacusRecognizer (メインファサード)                           │    │ │
+│  │  │  • AbacusRecognizer (main facade)                               │    │ │
 │  │  │  • AbacusConfiguration                                          │    │ │
 │  │  │  • AbacusResult / AbacusValue / CellState                       │    │ │
 │  │  └────────────────────────────────┬────────────────────────────────┘    │ │
@@ -23,101 +23,101 @@
 │  │            ▼                                              ▼              │ │
 │  │  ┌──────────────────────────┐        ┌──────────────────────────────┐   │ │
 │  │  │  AbacusVision (C++)      │        │  AbacusInference (Obj-C++)   │   │ │
-│  │  │  • 画像前処理             │        │  • ExecuTorch 推論           │   │ │
-│  │  │  • そろばん検出           │        │  • テンソル変換              │   │ │
-│  │  │  • ROI 抽出              │        │  • softmax/argmax           │   │ │
-│  │  │  • セル分離              │        │                              │   │ │
+│  │  │  • Image preprocessing   │        │  • ExecuTorch inference      │   │ │
+│  │  │  • Soroban detection     │        │  • Tensor conversion         │   │ │
+│  │  │  • ROI extraction        │        │  • softmax/argmax            │   │ │
+│  │  │  • Cell separation       │        │                              │   │ │
 │  │  └──────────┬───────────────┘        └──────────────┬───────────────┘   │ │
 │  │             │                                        │                   │ │
 │  │             ▼                                        ▼                   │ │
 │  │  ┌──────────────────────────┐        ┌──────────────────────────────┐   │ │
 │  │  │  OpenCV.xcframework      │        │  ExecuTorch Runtime          │   │ │
-│  │  │  (バンドル or App提供)   │        │  (App側で埋め込み必須)        │   │ │
+│  │  │  (bundled or App-provided)│       │  (must be embedded in App)   │   │ │
 │  │  └──────────────────────────┘        └──────────────────────────────┘   │ │
 │  └─────────────────────────────────────────────────────────────────────────┘ │
 │                                      │                                        │
 │                                      ▼                                        │
 │  ┌─────────────────────────────────────────────────────────────────────────┐ │
 │  │  App UI Layer                                                            │ │
-│  │  AbacusResult → 表示・保存・検証                                         │ │
+│  │  AbacusResult → Display / Save / Validate                               │ │
 │  └─────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 1.2 レイヤー構成
+## 1.2 Layer Structure
 
-| レイヤー | 言語 | 責務 | 依存関係 |
-|---------|------|------|---------|
-| **AbacusKit** | Swift | Public API / ファサード / ドメインモデル | AbacusVision, AbacusInference |
-| **AbacusVision** | C++ | OpenCV 画像処理 / セル検出 | OpenCV.xcframework |
-| **AbacusInference** | Obj-C++ | ExecuTorch 推論 / テンソル操作 | ExecuTorch (App提供) |
+| Layer | Language | Responsibilities | Dependencies |
+|-------|----------|------------------|--------------|
+| **AbacusKit** | Swift | Public API / Facade / Domain Models | AbacusVision, AbacusInference |
+| **AbacusVision** | C++ | OpenCV Image Processing / Cell Detection | OpenCV.xcframework |
+| **AbacusInference** | Obj-C++ | ExecuTorch Inference / Tensor Operations | ExecuTorch (App-provided) |
 
-## 1.3 データフロー
+## 1.3 Data Flow
 
 ```
 CVPixelBuffer (1920x1080, BGRA)
     │
     ▼  [AbacusVision::preprocess()]
 ┌─────────────────────────────────┐
-│ 1. リサイズ (長辺1280px)         │
-│ 2. グレースケール変換            │
-│ 3. コントラスト強調 (CLAHE)      │
-│ 4. 二値化 (適応的閾値)           │
-│ 5. 輪郭検出                      │
-│ 6. そろばんフレーム検出          │
-│ 7. 射影変換 (パースペクティブ補正)│
-│ 8. 桁・セル領域分割              │
+│ 1. Resize (long edge 1280px)    │
+│ 2. Grayscale conversion         │
+│ 3. Contrast enhancement (CLAHE) │
+│ 4. Binarization (adaptive threshold) │
+│ 5. Contour detection            │
+│ 6. Soroban frame detection      │
+│ 7. Perspective transformation   │
+│ 8. Digit/cell region division   │
 └─────────────────────────────────┘
     │
-    ▼  N個の Cell ROI (224x224 RGB float tensor)
+    ▼  N Cell ROIs (224x224 RGB float tensor)
     │
     ▼  [AbacusInference::predict()]
 ┌─────────────────────────────────┐
-│ 1. ImageNet正規化               │
+│ 1. ImageNet normalization       │
 │ 2. ExecuTorch forward()         │
 │ 3. softmax + argmax             │
 │ 4. CellState (upper/lower/empty)│
 └─────────────────────────────────┘
     │
-    ▼  CellState[] (各セルの状態)
+    ▼  CellState[] (state of each cell)
     │
     ▼  [AbacusKit::interpret()]
 ┌─────────────────────────────────┐
-│ 1. 上珠/下珠の状態から値を計算   │
-│ 2. 桁ごとに集計                  │
-│ 3. 整数値に変換                  │
+│ 1. Calculate value from upper/lower bead states │
+│ 2. Aggregate by digit           │
+│ 3. Convert to integer           │
 └─────────────────────────────────┘
     │
     ▼  AbacusResult { value: Int, cells: [CellState], confidence: Float }
 ```
 
-## 1.4 SPM制約と回避策
+## 1.4 SPM Constraints and Workarounds
 
-### 問題点
+### Issues
 
-1. **ExecuTorch は SwiftPM 経由だと依存解決が不安定**
-2. **OpenCV は XCFramework として配布が必要**
-3. **C++ モジュールの相互参照が複雑**
+1. **ExecuTorch dependency resolution is unstable via SwiftPM**
+2. **OpenCV needs to be distributed as XCFramework**
+3. **C++ module cross-referencing is complex**
 
-### 解決策
+### Solutions
 
-| 制約 | 回避策 |
-|------|--------|
-| ExecuTorch の SPM 依存 | **アプリ側で XCFramework として埋め込み**。AbacusKit は `@_implementationOnly import` で参照 |
-| OpenCV の配布 | **AbacusKit にバンドル** or **アプリ側で提供** (設定で選択可能) |
-| C++ モジュール分離 | **modulemap** を使い、clang モジュールとして公開 |
+| Constraint | Workaround |
+|------------|------------|
+| ExecuTorch SPM dependency | **Embed as XCFramework on app side**. AbacusKit references with `@_implementationOnly import` |
+| OpenCV distribution | **Bundle in AbacusKit** or **provide from app side** (configurable) |
+| C++ module separation | Use **modulemap** to expose as clang modules |
 
-### Package.swift 構成
+### Package.swift Structure
 
 ```swift
 targets: [
-    // Pure Swift - 公開API
+    // Pure Swift - Public API
     .target(
         name: "AbacusKit",
         dependencies: ["AbacusVision", "AbacusInference"]
     ),
     
-    // C++ OpenCV 画像処理
+    // C++ OpenCV image processing
     .target(
         name: "AbacusVision",
         dependencies: [],
@@ -125,20 +125,20 @@ targets: [
         linkerSettings: [.linkedFramework("opencv2")]
     ),
     
-    // Obj-C++ ExecuTorch 推論
+    // Obj-C++ ExecuTorch inference
     .target(
         name: "AbacusInference",
         dependencies: [],
-        // ExecuTorchはApp側で提供されることを前提
+        // ExecuTorch is expected to be provided by the App
         cxxSettings: [.unsafeFlags(["-std=c++17"])]
     )
 ]
 ```
 
-## 1.5 設計原則
+## 1.5 Design Principles
 
-1. **責務分離**: 前処理・推論・解釈を明確に分離
-2. **プロトコル指向**: すべての主要コンポーネントはプロトコルで抽象化
-3. **Swift 6 対応**: actor で排他制御、Sendable でスレッド安全性保証
-4. **テスタビリティ**: DI コンテナで全依存を差し替え可能
-5. **オフライン動作**: ネットワーク不要（モデルはバンドル or 事前DL）
+1. **Separation of Concerns**: Clearly separate preprocessing, inference, and interpretation
+2. **Protocol-Oriented**: All major components abstracted through protocols
+3. **Swift 6 Ready**: Thread safety guaranteed with actors and Sendable
+4. **Testability**: All dependencies replaceable via DI container
+5. **Offline Operation**: No network required (model bundled or pre-downloaded)

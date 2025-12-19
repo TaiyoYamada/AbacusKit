@@ -1,45 +1,28 @@
-# Part 4: API設計とエラー設計
+# Part 4: API Design and Error Design
 
 ## 4.1 Public Swift API
 
-### AbacusRecognizer (メインファサード)
+### AbacusRecognizer (Main Facade)
 
 ```swift
-/// そろばん認識エンジン
-/// 
-/// スレッドセーフ。複数スレッドから同時に呼び出し可能。
-/// 
-/// ```swift
-/// let recognizer = try AbacusRecognizer(configuration: .default)
-/// let result = try await recognizer.recognize(pixelBuffer: buffer)
-/// print("認識結果: \(result.value)")
-/// ```
+/// Soroban recognition engine
+/// Thread-safe. Can be called simultaneously from multiple threads.
 public actor AbacusRecognizer {
     
     // MARK: - Initialization
     
-    /// 設定を指定して初期化
-    /// - Parameter configuration: 認識設定
-    /// - Throws: AbacusError.invalidConfiguration
+    /// Initialize with configuration
     public init(configuration: AbacusConfiguration) throws
     
-    /// バンドルモデルで初期化 (デフォルト設定)
-    /// - Throws: AbacusError.modelNotFound
+    /// Initialize with bundled model (default configuration)
     public convenience init() throws
     
     // MARK: - Recognition
     
-    /// 単一フレームを認識
-    /// - Parameter pixelBuffer: カメラフレーム (BGRA 推奨)
-    /// - Returns: 認識結果
-    /// - Throws: AbacusError
+    /// Recognize a single frame
     public func recognize(pixelBuffer: CVPixelBuffer) async throws -> AbacusResult
     
-    /// 連続認識（安定化付き）
-    /// - Parameters:
-    ///   - pixelBuffer: カメラフレーム
-    ///   - strategy: 安定化戦略
-    /// - Returns: 安定化された認識結果
+    /// Continuous recognition (with stabilization)
     public func recognizeContinuous(
         pixelBuffer: CVPixelBuffer,
         strategy: StabilizationStrategy = .default
@@ -47,18 +30,18 @@ public actor AbacusRecognizer {
     
     // MARK: - Configuration
     
-    /// 設定を更新
+    /// Update configuration
     public func updateConfiguration(_ config: AbacusConfiguration) async
     
-    /// 現在の設定を取得
+    /// Get current configuration
     public var configuration: AbacusConfiguration { get async }
     
     // MARK: - Model Management
     
-    /// モデルを再読み込み
+    /// Reload model
     public func reloadModel() async throws
     
-    /// モデルバージョン情報
+    /// Model version information
     public var modelInfo: ModelInfo { get async }
 }
 ```
@@ -66,119 +49,68 @@ public actor AbacusRecognizer {
 ### AbacusConfiguration
 
 ```swift
-/// 認識エンジンの設定
+/// Recognition engine configuration
 public struct AbacusConfiguration: Sendable, Codable {
     
     // MARK: - Model
-    
-    /// モデルファイルのパス (nil = バンドル内モデル)
-    public var modelPath: URL?
-    
-    /// 推論バックエンド
+    public var modelPath: URL?                    // nil = bundled model
     public var inferenceBackend: InferenceBackend
     
     // MARK: - Recognition
-    
-    /// 認識する桁数 (1-13)
-    public var digitCount: Int
-    
-    /// 最小そろばん検出サイズ (画面比)
+    public var digitCount: Int                    // 1-13
     public var minFrameSizeRatio: Float
-    
-    /// 信頼度閾値 (0.0-1.0)
-    public var confidenceThreshold: Float
+    public var confidenceThreshold: Float         // 0.0-1.0
     
     // MARK: - Performance
-    
-    /// フレームスキップ間隔 (1 = 毎フレーム)
-    public var frameSkipInterval: Int
-    
-    /// 入力解像度制限 (長辺)
+    public var frameSkipInterval: Int             // 1 = every frame
     public var maxInputResolution: Int
     
     // MARK: - Debug
-    
-    /// デバッグ描画を有効化
     public var enableDebugOverlay: Bool
-    
-    /// 処理時間ログを有効化
     public var enablePerformanceLogging: Bool
     
     // MARK: - Presets
-    
-    /// デフォルト設定
     public static let `default`: AbacusConfiguration
-    
-    /// 高精度モード (遅い)
-    public static let highAccuracy: AbacusConfiguration
-    
-    /// 高速モード (精度低下)
-    public static let fast: AbacusConfiguration
+    public static let highAccuracy: AbacusConfiguration  // slower
+    public static let fast: AbacusConfiguration          // lower accuracy
 }
 
 public enum InferenceBackend: String, Sendable, Codable {
-    case coreml   // Neural Engine (推奨)
+    case coreml   // Neural Engine (recommended)
     case mps      // GPU
     case xnnpack  // CPU
-    case auto     // 自動選択
+    case auto     // Auto-select
 }
 ```
 
 ### AbacusResult
 
 ```swift
-/// 認識結果
+/// Recognition result
 public struct AbacusResult: Sendable, Equatable {
-    
-    /// 認識された値
-    public let value: Int
-    
-    /// 各セルの状態
-    public let cells: [CellState]
-    
-    /// 各桁の詳細情報
-    public let digits: [DigitInfo]
-    
-    /// 全体信頼度 (0.0-1.0)
-    public let confidence: Float
-    
-    /// そろばんフレームの位置 (元画像座標)
-    public let frameRect: CGRect
-    
-    /// 処理時間 (ms)
+    public let value: Int              // Recognized value
+    public let cells: [CellState]      // State of each cell
+    public let digits: [DigitInfo]     // Detailed information for each digit
+    public let confidence: Float       // Overall confidence (0.0-1.0)
+    public let frameRect: CGRect       // Soroban frame position
     public let processingTimeMs: Double
-    
-    /// 処理時間の内訳
     public let timingBreakdown: TimingBreakdown
-    
-    /// タイムスタンプ
     public let timestamp: Date
 }
 
 public struct DigitInfo: Sendable, Equatable {
-    /// 桁の位置 (右から0始まり)
-    public let position: Int
-    
-    /// この桁の値 (0-9)
-    public let value: Int
-    
-    /// 上珠の状態
+    public let position: Int           // 0-indexed from right
+    public let value: Int              // 0-9
     public let upperBead: CellState
-    
-    /// 下珠の状態 (4個)
-    public let lowerBeads: [CellState]
-    
-    /// この桁の信頼度
+    public let lowerBeads: [CellState] // 4 beads
     public let confidence: Float
-    
-    /// 元画像上のバウンディングボックス
     public let boundingBox: CGRect
 }
 
 public enum CellState: Int, Sendable, Codable {
-    case upper = 0  // 上位置 (カウントしない)
-    case lower = 1  // 下位置 (カウントする)
-    case empty = 2  // 検出できず
+    case upper = 0  // Upper position (not counting)
+    case lower = 1  // Lower position (counting)
+    case empty = 2  // Not detected
 }
 
 public struct TimingBreakdown: Sendable {
@@ -192,65 +124,38 @@ public struct TimingBreakdown: Sendable {
 
 ---
 
-## 4.2 エラー設計
+## 4.2 Error Design
 
 ```swift
-/// AbacusKit のエラー
+/// AbacusKit errors
 public enum AbacusError: Error, Sendable {
-    
-    // MARK: - Configuration Errors
-    
-    /// 無効な設定
+    // Configuration Errors
     case invalidConfiguration(reason: String)
-    
-    /// モデルファイルが見つからない
     case modelNotFound(path: String)
-    
-    /// モデルのロードに失敗
     case modelLoadFailed(underlying: Error)
     
-    // MARK: - Vision Errors
-    
-    /// 画像前処理に失敗
+    // Vision Errors
     case preprocessingFailed(reason: String, code: Int)
-    
-    /// そろばんフレームが検出できない
     case abacusNotDetected
-    
-    /// 無効な入力画像
     case invalidInput(reason: String)
     
-    // MARK: - Inference Errors
-    
-    /// 推論に失敗
+    // Inference Errors
     case inferenceFailed(underlying: Error)
-    
-    /// モデルがロードされていない
     case modelNotLoaded
     
-    // MARK: - Recognition Errors
-    
-    /// 信頼度が閾値未満
+    // Recognition Errors
     case lowConfidence(confidence: Float, threshold: Float)
-    
-    /// セグメンテーションに失敗
     case segmentationFailed(reason: String)
 }
 
-extension AbacusError: LocalizedError {
-    public var errorDescription: String? { ... }
-    public var failureReason: String? { ... }
-    public var recoverySuggestion: String? { ... }
-}
-
 extension AbacusError {
-    /// リトライ可能か
+    /// Whether the error is retryable
     public var isRetryable: Bool {
         switch self {
         case .abacusNotDetected, .lowConfidence:
-            return true  // 次のフレームで改善する可能性
+            return true  // May improve in the next frame
         case .modelLoadFailed, .modelNotFound, .invalidConfiguration:
-            return false // 設定変更が必要
+            return false // Configuration change required
         default:
             return false
         }
@@ -263,37 +168,20 @@ extension AbacusError {
 ## 4.3 StabilizationStrategy
 
 ```swift
-/// 連続認識時の安定化戦略
+/// Stabilization strategy for continuous recognition
 public struct StabilizationStrategy: Sendable {
-    
-    /// 同じ値が連続する回数の閾値
     public var consecutiveMatchCount: Int
-    
-    /// 履歴ウィンドウサイズ
     public var historyWindowSize: Int
-    
-    /// 信頼度の重み付け
     public var confidenceWeight: Float
     
-    /// デフォルト戦略
     public static let `default` = StabilizationStrategy(
-        consecutiveMatchCount: 3,
-        historyWindowSize: 5,
-        confidenceWeight: 0.7
+        consecutiveMatchCount: 3, historyWindowSize: 5, confidenceWeight: 0.7
     )
-    
-    /// 高感度 (変化に素早く追従)
     public static let responsive = StabilizationStrategy(
-        consecutiveMatchCount: 2,
-        historyWindowSize: 3,
-        confidenceWeight: 0.5
+        consecutiveMatchCount: 2, historyWindowSize: 3, confidenceWeight: 0.5
     )
-    
-    /// 高安定 (誤認識を防ぐ)
     public static let stable = StabilizationStrategy(
-        consecutiveMatchCount: 5,
-        historyWindowSize: 10,
-        confidenceWeight: 0.9
+        consecutiveMatchCount: 5, historyWindowSize: 10, confidenceWeight: 0.9
     )
 }
 ```
@@ -303,24 +191,11 @@ public struct StabilizationStrategy: Sendable {
 ## 4.4 Model Update API (GitHub Releases)
 
 ```swift
-/// モデル更新マネージャー
+/// Model update manager
 public actor AbacusModelUpdater {
-    
-    /// GitHub Releases から最新モデルをチェック
-    public func checkForUpdates(
-        repository: String = "owner/AbacusKit"
-    ) async throws -> ModelUpdateInfo?
-    
-    /// モデルをダウンロード・インストール
-    public func downloadAndInstall(
-        updateInfo: ModelUpdateInfo,
-        progress: @escaping (Double) -> Void
-    ) async throws -> URL
-    
-    /// ローカルキャッシュをクリア
+    public func checkForUpdates(repository: String = "owner/AbacusKit") async throws -> ModelUpdateInfo?
+    public func downloadAndInstall(updateInfo: ModelUpdateInfo, progress: @escaping (Double) -> Void) async throws -> URL
     public func clearCache() async throws
-    
-    /// 現在インストールされているバージョン
     public var installedVersion: String? { get async }
 }
 
@@ -336,9 +211,9 @@ public struct ModelUpdateInfo: Sendable {
 
 ---
 
-## 4.5 使用例
+## 4.5 Usage Examples
 
-### 基本使用
+### Basic Usage
 
 ```swift
 import AbacusKit
@@ -349,59 +224,48 @@ class AbacusViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        do {
-            recognizer = try AbacusRecognizer()
-        } catch {
-            showError("初期化失敗: \(error)")
-        }
+        recognizer = try! AbacusRecognizer()
     }
     
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            return
-        }
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
         Task {
             do {
                 let result = try await recognizer.recognize(pixelBuffer: pixelBuffer)
-                await MainActor.run {
-                    updateUI(with: result)
-                }
+                await MainActor.run { updateUI(with: result) }
             } catch AbacusError.abacusNotDetected {
-                // そろばんが見つからない → 無視
+                // Soroban not found
             } catch {
-                print("認識エラー: \(error)")
+                print("Recognition error: \(error)")
             }
         }
     }
 }
 ```
 
-### カスタム設定
+### Custom Configuration
 
 ```swift
 var config = AbacusConfiguration.default
-config.digitCount = 5           // 5桁のそろばん
-config.inferenceBackend = .mps  // GPU使用
+config.digitCount = 5
+config.inferenceBackend = .mps
 config.confidenceThreshold = 0.8
 
 let recognizer = try AbacusRecognizer(configuration: config)
 ```
 
-### 連続認識 (安定化)
+### Continuous Recognition (Stabilized)
 
 ```swift
-// 値が3回連続して同じときに確定
 let result = try await recognizer.recognizeContinuous(
     pixelBuffer: buffer,
     strategy: .stable
 )
 
 if result.confidence > 0.9 {
-    // 高信頼度の結果
     confirmValue(result.value)
 }
 ```
