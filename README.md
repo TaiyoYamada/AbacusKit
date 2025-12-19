@@ -175,6 +175,54 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
+## 🛠 Development
+
+### Building & Testing
+
+This SDK uses Swift Package Manager and does not depend on Xcode-specific configurations.
+
+```bash
+# Build
+swift build
+
+# Run tests
+swift test
+
+# Generate documentation
+swift package generate-documentation
+```
+
+### Code Style
+
+We use CLI-based tools for formatting and linting. These are run manually during local development and automatically verified in CI.
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) | Code formatting | `.swiftformat` |
+| [SwiftLint](https://github.com/realm/SwiftLint) | Linting | `.swiftlint.yml` |
+
+#### Running Locally
+
+```bash
+# Format code
+swiftformat .
+
+# Lint code
+swiftlint
+```
+
+> **Note**: Code is not auto-formatted on save or commit. Run these tools manually before opening a PR.
+
+### CI
+
+Pull requests are automatically checked for:
+
+- Build success (`swift build`)
+- Test pass (`swift test`)
+- Format/lint compliance
+
+---
+
 <div align="center">
 
 **Made with ❤️ for iOS developers**
