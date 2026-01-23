@@ -62,7 +62,8 @@ public struct SorobanInterpreter: Sendable {
         boundingBoxes: [CGRect]
     ) -> [SorobanLane] {
         guard predictions.count == laneCount * 5,
-              boundingBoxes.count == laneCount else {
+              boundingBoxes.count == laneCount else
+        {
             return []
         }
 
