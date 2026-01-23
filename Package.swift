@@ -21,8 +21,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pytorch/executorch.git", branch: "swiftpm-1.0.1"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
-        .package(url: "https://github.com/Quick/Quick.git", from: "7.3.0"),
-        .package(url: "https://github.com/Quick/Nimble.git", from: "13.2.0"),
+
     ],
     targets: [
         // MARK: - Binary Targets (xcframework)
@@ -89,8 +88,6 @@ let package = Package(
             name: "AbacusKitTests",
             dependencies: [
                 "AbacusKit",
-                "Quick",
-                "Nimble",
             ],
             path: "Tests/AbacusKitTests"
         ),
