@@ -28,6 +28,23 @@ jobs:
             --hosting-base-path AbacusKit \
             --disable-indexing
 
+      # ルート URL からドキュメントへリダイレクト
+      - name: Create redirect index.html
+        run: |
+          cat > Docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="refresh" content="0; url=documentation/abacuskit">
+            <title>Redirecting to AbacusKit Documentation</title>
+          </head>
+          <body>
+            <p>Redirecting to <a href="documentation/abacuskit">AbacusKit Documentation</a>...</p>
+          </body>
+          </html>
+          EOF
+
       # GitHub Pages 用 artifact としてアップロード
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
