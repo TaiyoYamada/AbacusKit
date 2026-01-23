@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # Cuckooモック生成スクリプト
-# このスクリプトはプロトコルからモックを自動生成します
 
 set -e
 
-echo "🔨 Generating mocks with Cuckoo..."
+echo "Generating mocks with Cuckoo..."
 
 # 出力ディレクトリを作成
 mkdir -p Tests/AbacusKitTests/Generated
@@ -22,5 +21,5 @@ swift run cuckoo generate \
     Sources/AbacusKit/Storage/FileStorageProtocol.swift \
     Sources/AbacusKit/Storage/ModelCacheProtocol.swift
 
-echo "✅ Mocks generated successfully!"
-echo "📁 Output: Tests/AbacusKitTests/Generated/GeneratedMocks.swift"
+echo "Mocks generated successfully"
+echo "Output: Tests/AbacusKitTests/Generated/GeneratedMocks.swift"

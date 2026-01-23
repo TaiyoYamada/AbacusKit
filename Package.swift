@@ -45,9 +45,6 @@ let package = Package(
                 .product(name: "kernels_optimized", package: "executorch"),
             ],
             path: "Sources/AbacusKit",
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ],
             linkerSettings: [
                 .linkedFramework("CoreVideo"),
                 .linkedFramework("CoreGraphics"),
