@@ -89,7 +89,8 @@ let package = Package(
             dependencies: [
                 "AbacusKit",
             ],
-            path: "Tests/AbacusKitTests"
+            path: "Tests/AbacusKitTests",
+            exclude: ["README.md"]
         ),
     ],
     cxxLanguageStandard: .cxx17
