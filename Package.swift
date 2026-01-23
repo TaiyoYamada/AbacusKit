@@ -4,7 +4,7 @@
 import PackageDescription
 
 let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v0.0.1/opencv2.xcframework.zip"
-let opencvChecksum = "1bdc6cb6de340a0ad4fd406890c066f63da256cf2c29b9252aec1096b47a5639"
+let opencvChecksum = "eac9e041503515f33ca677e5b760cc49e97e8607933d33e00a4c309666fe3890"
 
 let package = Package(
     name: "AbacusKit",
