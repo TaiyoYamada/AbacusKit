@@ -3,11 +3,18 @@
 
 #include "VisionTypes.hpp"
 
-#if __has_include(<opencv2/core.hpp>)
-#define ABACUS_HAS_OPENCV 1
+#ifndef ABACUS_HAS_OPENCV
+    #if __has_include(<opencv2/core.hpp>)
+        #define ABACUS_HAS_OPENCV 1
+    #else
+        #define ABACUS_HAS_OPENCV 0
+    #endif
+#endif
+
+#if ABACUS_HAS_OPENCV
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #else
-#define ABACUS_HAS_OPENCV 0
 #ifndef CV_PI
 #define CV_PI 3.14159265358979323846
 #endif
