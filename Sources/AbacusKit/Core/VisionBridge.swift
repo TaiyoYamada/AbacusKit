@@ -175,7 +175,7 @@ final class VisionBridge: @unchecked Sendable {
         // Convert lane information
         var laneBoundingBoxes: [CGRect] = []
         if let lanes = result.lanes {
-            for i in 0 ..< Int(result.laneCount) {
+            for i in 0..<Int(result.laneCount) {
                 let lane = lanes[i]
                 let rect = CGRect(
                     x: CGFloat(lane.boundingBox.x),

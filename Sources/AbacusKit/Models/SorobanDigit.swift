@@ -128,7 +128,7 @@ public struct SorobanDigit: Sendable, Equatable, Hashable {
             }
         }
 
-        return min(9, value)  // Maximum value is 9
+        return min(9, value) // Maximum value is 9
     }
 
     /// Returns whether all beads in this digit have valid states.

@@ -54,9 +54,9 @@ public actor AbacusInferenceEngine {
     private let batchSize: Int
 
     /// Cell image dimensions (CHW format).
-    private let cellChannels: Int = 3
-    private let cellHeight: Int = 224
-    private let cellWidth: Int = 224
+    private let cellChannels = 3
+    private let cellHeight = 224
+    private let cellWidth = 224
 
     /// Handle to the loaded model (type-erased for ExecuTorch).
     private var moduleHandle: Any?
@@ -207,7 +207,7 @@ public actor AbacusInferenceEngine {
 
     /// Creates placeholder predictions when ExecuTorch is not available.
     private func createDummyPredictions(count: Int) -> [CellPrediction] {
-        (0 ..< count).map { _ in
+        (0..<count).map { _ in
             CellPrediction(
                 predictedClass: .empty,
                 probabilities: [0.33, 0.33, 0.34]
@@ -228,11 +228,13 @@ public actor AbacusInferenceEngine {
         let numClasses = 3
         var predictions: [CellPrediction] = []
 
-        for i in 0 ..< batchSize {
+        for i in 0..<batchSize {
             let offset = i * numClasses
-            guard offset + numClasses <= data.count else { break }
+            guard offset + numClasses <= data.count else {
+                break
+            }
 
-            let logits = Array(data[offset ..< offset + numClasses])
+            let logits = Array(data[offset..<offset + numClasses])
             let probabilities = softmax(logits)
 
             let maxIndex = probabilities.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
