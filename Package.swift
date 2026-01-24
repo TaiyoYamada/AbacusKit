@@ -3,7 +3,7 @@
 
 import PackageDescription
 
-let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/tag/v0.0.1/opencv2.xcframework.zip"
+let opencvURL = "https://github.com/TaiyoYamada/AbacusKit/releases/download/v0.0.1/opencv2.xcframework.zip"
 let opencvChecksum = "bc856c08a0713a47e20248429a784a0b820ed5e389fd4d9558558bb801cc849b"
 
 let package = Package(
@@ -19,7 +19,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pytorch/executorch.git", branch: "swiftpm-1.0.1"),
+        .package(url: "https://github.com/pytorch/executorch.git", branch: "swiftpm-1.0.1"), // ブランチちゃんと調べないとやられる
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
 
     ],
