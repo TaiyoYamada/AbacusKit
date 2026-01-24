@@ -6,6 +6,7 @@
 #if __has_include(<opencv2/core.hpp>)
 #define ABACUS_HAS_OPENCV 1
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #else
 #define ABACUS_HAS_OPENCV 0
 #ifndef CV_PI
