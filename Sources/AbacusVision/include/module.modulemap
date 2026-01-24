@@ -1,4 +1,13 @@
-module AbacusVision {
+// AbacusVisionBridge Module
+// Swift から呼び出し可能な C API のみを公開
+
+module AbacusVisionBridge [system] {
+    header "AbacusVisionBridge.h"
+    export *
+}
+
+// AbacusVision C++ Module (内部使用)
+module AbacusVisionCxx {
     header "AbacusVision.hpp"
     header "VisionTypes.hpp"
     header "ImagePreprocessor.hpp"

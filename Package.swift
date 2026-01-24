@@ -49,8 +49,8 @@ let package = Package(
                 .linkedFramework("CoreGraphics"),
                 .linkedFramework("Accelerate"),
                 .linkedFramework("CoreML"),
-                // Force load all symbols from static libraries to trigger backends and kernels registration
-                .unsafeFlags(["-Wl,-all_load"]),
+                // Force load all symbols from static libraries (iOS only)
+                .unsafeFlags(["-Wl,-all_load"], .when(platforms: [.iOS])),
             ]
         ),
 
@@ -64,6 +64,7 @@ let package = Package(
             path: "Sources/AbacusVision",
             sources: [
                 "src/AbacusVision.cpp",
+                "src/AbacusVisionBridge.cpp",
                 "src/ImagePreprocessor.cpp",
                 "src/SorobanDetector.cpp",
                 "src/TensorConverter.cpp",

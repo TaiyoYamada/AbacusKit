@@ -183,6 +183,7 @@ public actor AbacusRecognizer {
 /// AbacusVision の Swift ラッパー
 final class VisionProcessor: @unchecked Sendable {
     private var configuration: AbacusConfiguration
+    private let bridge: VisionBridge
 
     struct VisionResult: Sendable {
         let frameDetected: Bool
@@ -197,14 +198,30 @@ final class VisionProcessor: @unchecked Sendable {
 
     init(configuration: AbacusConfiguration) {
         self.configuration = configuration
+        bridge = VisionBridge()
     }
 
     func updateConfiguration(_ config: AbacusConfiguration) {
         configuration = config
     }
 
-    func process(pixelBuffer _: CVPixelBuffer) throws -> VisionResult {
-        // TODO: AbacusVision C++ モジュールを呼び出す
-        throw AbacusError.frameNotDetected
+    func process(pixelBuffer: CVPixelBuffer) throws -> VisionResult {
+        guard bridge.isValid else {
+            throw AbacusError.preprocessingFailed(reason: "VisionBridge not initialized", code: -1)
+        }
+
+        let result = try bridge.process(pixelBuffer: pixelBuffer)
+
+        return VisionResult(
+            frameDetected: result.frameDetected,
+            frameRect: result.frameRect,
+            frameCorners: result.frameCorners,
+            laneCount: result.laneCount,
+            laneBoundingBoxes: result.laneBoundingBoxes,
+            tensorData: result.tensorData,
+            cellCount: result.cellCount,
+            detectionTimeMs: result.detectionTimeMs
+        )
     }
 }
+
