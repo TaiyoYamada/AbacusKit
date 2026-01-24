@@ -1,30 +1,67 @@
 // AbacusKit - Main Entry Point
 // Swift 6.2 + C++ Interop
 
-/// AbacusKit - そろばん認識 SDK
+/// AbacusKit is a real-time soroban (Japanese abacus) recognition SDK.
 ///
-/// リアルタイムでそろばんの状態を認識し、数値に変換するSDK。
-/// OpenCV による高速前処理と ExecuTorch による推論を組み合わせ、
-/// 30FPS 以上のリアルタイム処理を実現。
+/// This framework detects soroban from camera frames and recognizes
+/// their state as numeric values. It combines high-speed image preprocessing
+/// with OpenCV and accurate machine learning inference with ExecuTorch
+/// to achieve real-time processing at 30+ FPS.
 ///
-/// ## 機能
-/// - 可変レーン対応（1〜27桁）
-/// - 自動フレーム検出・射影補正
-/// - 高精度セル状態分類
-/// - Swift 6 Concurrency 完全対応
+/// ## Features
 ///
-/// ## 基本的な使用例
+/// - **Variable Lane Support**: Supports any soroban from 1 to 27 digits.
+/// - **Automatic Frame Detection**: Detects soroban frame and applies perspective correction.
+/// - **High-Accuracy Classification**: Uses neural networks for precise bead state detection.
+/// - **Swift 6 Concurrency Ready**: Fully compatible with async/await and actors.
+///
+/// ## Basic Usage
 ///
 /// ```swift
 /// import AbacusKit
 ///
-/// let recognizer = try AbacusRecognizer()
+/// let recognizer = AbacusRecognizer()
 ///
-/// // カメラフレームから認識
+/// // Recognize a camera frame
 /// let result = try await recognizer.recognize(pixelBuffer: cameraFrame)
-/// print("認識値: \(result.value)")
-/// print("信頼度: \(result.confidence)")
+/// print("Recognized value: \(result.value)")
+/// print("Confidence: \(result.confidence)")
 /// ```
+///
+/// ## Architecture
+///
+/// AbacusKit is structured into three main layers:
+///
+/// 1. **AbacusVision (C++)**: Handles image preprocessing using OpenCV,
+///    including frame detection, perspective warping, and lane extraction.
+///
+/// 2. **AbacusInferenceEngine (Swift)**: Performs neural network inference
+///    using ExecuTorch to classify individual bead states.
+///
+/// 3. **SorobanInterpreter (Swift)**: Converts classified bead states
+///    into numeric digit values according to soroban counting rules.
+///
+/// ## Topics
+///
+/// ### Getting Started
+///
+/// - ``AbacusRecognizer``
+/// - ``AbacusConfiguration``
+///
+/// ### Recognition Results
+///
+/// - ``SorobanResult``
+/// - ``SorobanLane``
+/// - ``SorobanDigit``
+///
+/// ### Bead States
+///
+/// - ``CellState``
+/// - ``CellPrediction``
+///
+/// ### Error Handling
+///
+/// - ``AbacusError``
 
 @_exported import CoreVideo
 @_exported import Foundation

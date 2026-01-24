@@ -90,7 +90,7 @@ let package = Package(
             dependencies: [
                 "AbacusKit",
             ],
-            path: "Tests/AbacusKitTests",
+            path: "Tests",
             exclude: ["README.md"]
         ),
     ],

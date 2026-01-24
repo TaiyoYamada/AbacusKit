@@ -3,63 +3,145 @@
 
 import Foundation
 
-/// AbacusKit の設定
+/// Configuration options for the AbacusKit recognition engine.
+///
+/// Use `AbacusConfiguration` to customize recognition behavior, performance
+/// characteristics, and preprocessing options. The SDK provides several
+/// preset configurations suitable for common use cases.
+///
+/// ## Presets
+///
+/// AbacusKit includes three built-in presets:
+///
+/// - ``default``: Balanced performance and accuracy for most applications.
+/// - ``highAccuracy``: Maximum accuracy with higher processing time.
+/// - ``fast``: Optimized for speed with reduced accuracy.
+///
+/// ## Example
+///
+/// ```swift
+/// // Use a preset
+/// let recognizer = AbacusRecognizer(configuration: .highAccuracy)
+///
+/// // Or customize specific settings
+/// var config = AbacusConfiguration.default
+/// config.confidenceThreshold = 0.9
+/// config.enablePerformanceLogging = true
+/// let customRecognizer = AbacusRecognizer(configuration: config)
+/// ```
+///
+/// ## Performance Tuning
+///
+/// For real-time applications, consider adjusting:
+///
+/// - ``frameSkipInterval``: Process every Nth frame to reduce CPU usage.
+/// - ``maxInputResolution``: Lower values reduce processing time.
+/// - ``batchSize``: Affects GPU utilization during inference.
 public struct AbacusConfiguration: Sendable, Equatable {
-    // MARK: - モデル設定
+    // MARK: - Model Settings
 
-    /// モデルファイルのパス（nil = バンドル内モデル）
+    /// The path to a custom model file.
+    ///
+    /// Set this to use a custom-trained `.pte` model file instead of
+    /// the bundled model. Set to `nil` to use the default bundled model.
     public var modelPath: URL?
 
-    /// 推論バックエンド
+    /// The inference backend to use for neural network execution.
+    ///
+    /// Different backends offer various tradeoffs between speed and
+    /// power consumption. See ``InferenceBackend`` for options.
     public var inferenceBackend: InferenceBackend
 
-    // MARK: - 認識設定
+    // MARK: - Recognition Settings
 
-    /// 最小レーン数
+    /// The minimum number of digit lanes to detect.
+    ///
+    /// Sorobans with fewer lanes than this value will not be recognized.
+    /// Set to 1 to accept any soroban.
     public var minLaneCount: Int
 
-    /// 最大レーン数
+    /// The maximum number of digit lanes to detect.
+    ///
+    /// Sorobans with more lanes than this value will not be recognized.
+    /// Standard sorobans have up to 27 lanes.
     public var maxLaneCount: Int
 
-    /// 信頼度閾値
+    /// The minimum confidence threshold for valid recognition results.
+    ///
+    /// Results with confidence below this threshold will throw
+    /// ``AbacusError/lowConfidence(confidence:threshold:)``.
+    /// Range: 0.0 to 1.0.
     public var confidenceThreshold: Float
 
-    /// フレーム検出の最小サイズ比率
+    /// The minimum size ratio of the soroban frame relative to the image.
+    ///
+    /// Frames smaller than this ratio (frame_area / image_area) will be
+    /// ignored. Increase this value to prevent false positives from
+    /// small objects in the scene.
     public var minFrameSizeRatio: Float
 
-    // MARK: - パフォーマンス設定
+    // MARK: - Performance Settings
 
-    /// フレームスキップ間隔（1 = 毎フレーム処理）
+    /// The interval at which to process frames.
+    ///
+    /// Set to 1 to process every frame. Set to 2 to process every
+    /// other frame, etc. Higher values reduce CPU usage but may
+    /// increase latency in detecting changes.
     public var frameSkipInterval: Int
 
-    /// 最大入力解像度（長辺）
+    /// The maximum input resolution (longest edge in pixels).
+    ///
+    /// Input images larger than this resolution will be downscaled
+    /// before processing. Lower values improve performance but may
+    /// reduce accuracy for small beads.
     public var maxInputResolution: Int
 
-    /// バッチサイズ（推論時）
+    /// The batch size for neural network inference.
+    ///
+    /// Larger batch sizes can improve GPU utilization but use more
+    /// memory. The optimal value depends on the device's GPU capabilities.
     public var batchSize: Int
 
-    // MARK: - 前処理設定
+    // MARK: - Preprocessing Settings
 
-    /// CLAHE を有効化
+    /// Enables Contrast Limited Adaptive Histogram Equalization (CLAHE).
+    ///
+    /// CLAHE improves recognition in low-contrast lighting conditions
+    /// but adds processing overhead. Recommended for variable lighting.
     public var enableCLAHE: Bool
 
-    /// ホワイトバランス補正を有効化
+    /// Enables automatic white balance correction.
+    ///
+    /// White balance correction normalizes color temperature, improving
+    /// recognition under artificial lighting. Recommended for indoor use.
     public var enableWhiteBalance: Bool
 
-    /// ノイズ低減を有効化
+    /// Enables noise reduction filtering.
+    ///
+    /// Noise reduction improves recognition of low-quality camera feeds
+    /// but adds processing time. Disable for high-quality cameras.
     public var enableNoiseReduction: Bool
 
-    // MARK: - デバッグ設定
+    // MARK: - Debug Settings
 
-    /// デバッグオーバーレイを有効化
+    /// Enables the debug overlay showing detection regions.
+    ///
+    /// When enabled, recognition results include visualization data
+    /// for drawing debug overlays on the camera preview.
     public var enableDebugOverlay: Bool
 
-    /// パフォーマンスログを有効化
+    /// Enables performance logging to the console.
+    ///
+    /// When enabled, timing information is printed after each
+    /// recognition operation. Useful during development.
     public var enablePerformanceLogging: Bool
 
-    // MARK: - プリセット
+    // MARK: - Presets
 
-    /// デフォルト設定
+    /// The default configuration with balanced performance and accuracy.
+    ///
+    /// Suitable for most applications. Processes every frame at up to
+    /// 1280px resolution with all preprocessing enabled.
     public static let `default` = AbacusConfiguration(
         modelPath: nil,
         inferenceBackend: .auto,
@@ -77,7 +159,11 @@ public struct AbacusConfiguration: Sendable, Equatable {
         enablePerformanceLogging: false
     )
 
-    /// 高精度モード
+    /// High-accuracy configuration optimized for precision.
+    ///
+    /// Uses higher resolution, stricter confidence thresholds, and
+    /// smaller batch sizes for maximum accuracy. Recommended when
+    /// recognition accuracy is more important than speed.
     public static let highAccuracy = AbacusConfiguration(
         modelPath: nil,
         inferenceBackend: .coreml,
@@ -95,7 +181,11 @@ public struct AbacusConfiguration: Sendable, Equatable {
         enablePerformanceLogging: false
     )
 
-    /// 高速モード
+    /// Fast configuration optimized for speed.
+    ///
+    /// Uses lower resolution, relaxed confidence thresholds, and
+    /// skips preprocessing for maximum performance. Use when
+    /// processing speed is critical and lighting conditions are good.
     public static let fast = AbacusConfiguration(
         modelPath: nil,
         inferenceBackend: .coreml,
@@ -113,8 +203,25 @@ public struct AbacusConfiguration: Sendable, Equatable {
         enablePerformanceLogging: false
     )
 
-    // MARK: - 初期化
+    // MARK: - Initialization
 
+    /// Creates a new configuration with the specified options.
+    ///
+    /// - Parameters:
+    ///   - modelPath: Path to a custom model file, or `nil` for the default model.
+    ///   - inferenceBackend: The backend to use for neural network inference.
+    ///   - minLaneCount: Minimum number of lanes to detect.
+    ///   - maxLaneCount: Maximum number of lanes to detect.
+    ///   - confidenceThreshold: Minimum confidence for valid results.
+    ///   - minFrameSizeRatio: Minimum frame size relative to image.
+    ///   - frameSkipInterval: Process every Nth frame.
+    ///   - maxInputResolution: Maximum input image resolution.
+    ///   - batchSize: Batch size for inference.
+    ///   - enableCLAHE: Enable contrast enhancement.
+    ///   - enableWhiteBalance: Enable white balance correction.
+    ///   - enableNoiseReduction: Enable noise filtering.
+    ///   - enableDebugOverlay: Enable debug visualization.
+    ///   - enablePerformanceLogging: Enable timing logs.
     public init(
         modelPath: URL? = nil,
         inferenceBackend: InferenceBackend = .auto,
@@ -148,24 +255,51 @@ public struct AbacusConfiguration: Sendable, Equatable {
     }
 }
 
-/// 推論バックエンド
+// MARK: - InferenceBackend
+
+/// The hardware backend used for neural network inference.
+///
+/// Different backends offer various tradeoffs between performance,
+/// power consumption, and availability. Use ``auto`` to let the
+/// system choose the optimal backend for the current device.
+///
+/// ## Backend Comparison
+///
+/// | Backend | Processor | Best For |
+/// |---------|-----------|----------|
+/// | `.coreml` | Neural Engine | Battery life, consistent performance |
+/// | `.mps` | GPU | Maximum throughput |
+/// | `.xnnpack` | CPU | Compatibility |
+/// | `.auto` | Varies | General use |
 public enum InferenceBackend: String, Sendable, Codable, CaseIterable {
-    /// CoreML（Neural Engine、推奨）
+    /// Uses Core ML with the Apple Neural Engine.
+    ///
+    /// Provides excellent performance with low power consumption.
+    /// Recommended for most iOS applications.
     case coreml
 
-    /// MPS（GPU）
+    /// Uses Metal Performance Shaders on the GPU.
+    ///
+    /// Provides high throughput for batch processing. May use more
+    /// power than Core ML but offers lower latency for some models.
     case mps
 
-    /// XNNPACK（CPU）
+    /// Uses XNNPACK for CPU-based inference.
+    ///
+    /// A fallback option that works on all devices but may be slower
+    /// than hardware-accelerated backends.
     case xnnpack
 
-    /// 自動選択
+    /// Automatically selects the best available backend.
+    ///
+    /// Chooses based on device capabilities and current system state.
+    /// This is the recommended option for most applications.
     case auto
 
-    /// バックエンドの説明
+    /// A human-readable description of this backend.
     public var localizedDescription: String {
         switch self {
-        case .coreml: "CoreML (Neural Engine)"
+        case .coreml: "Core ML (Neural Engine)"
         case .mps: "Metal Performance Shaders (GPU)"
         case .xnnpack: "XNNPACK (CPU)"
         case .auto: "Automatic Selection"
