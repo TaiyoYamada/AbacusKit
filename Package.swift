@@ -44,6 +44,9 @@ let package = Package(
                 .product(name: "kernels_optimized", package: "executorch"),
             ],
             path: "Sources/AbacusKit",
+            resources: [
+                .copy("Model/abacus.pte"),
+            ],
             linkerSettings: [
                 .linkedFramework("CoreVideo"),
                 .linkedFramework("CoreGraphics"),
