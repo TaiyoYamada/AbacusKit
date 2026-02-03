@@ -42,36 +42,67 @@ public struct SorobanInterpreter: Sendable {
 
     /// Calculates the total numeric value from a list of lanes.
     ///
-    /// The lanes are sorted by position and combined according to their
-    /// positional significance (ones, tens, hundreds, etc.).
+    /// Each lane's value is multiplied by 10^position to correctly place
+    /// the digit, regardless of whether positions are contiguous or in order.
     ///
     /// - Parameter lanes: An array of recognition lanes (any order).
-    /// - Returns: The combined integer value represented by all lanes.
+    /// - Returns: The combined integer value, or 0 if overflow occurs.
     ///
     /// ## Example
     ///
     /// ```swift
-    /// // For lanes representing digits [1, 2, 3] (positions 2, 1, 0)
+    /// // For lanes representing digits at positions 0 and 2
+    /// // position 0: value 3 (ones place)
+    /// // position 2: value 5 (hundreds place)
     /// let value = interpreter.interpret(lanes: lanes)
-    /// // Returns 123
+    /// // Returns 503
     /// ```
     public func interpret(lanes: [SorobanLane]) -> Int {
         guard !lanes.isEmpty else {
             return 0
         }
 
-        // Sort by position (rightmost = 0, increasing to the left)
-        let sortedLanes = lanes.sorted { $0.position < $1.position }
-
         var value = 0
-        var multiplier = 1
 
-        for lane in sortedLanes {
-            value += lane.value * multiplier
-            multiplier *= 10
+        for lane in lanes {
+            // Calculate multiplier directly from position
+            // This is robust against non-contiguous positions
+            let multiplier = Self.powerOf10(lane.position)
+            
+            // Check for overflow during multiplication
+            let (addValue, overflow1) = lane.value.multipliedReportingOverflow(by: multiplier)
+            if overflow1 {
+                return 0
+            }
+            
+            // Check for overflow during addition
+            let (newValue, overflow2) = value.addingReportingOverflow(addValue)
+            if overflow2 {
+                return 0
+            }
+            
+            value = newValue
         }
 
         return value
+    }
+    
+    /// Returns 10^exponent as Int, with overflow protection.
+    ///
+    /// - Parameter exponent: The power to raise 10 to (must be >= 0).
+    /// - Returns: 10^exponent, or Int.max if overflow would occur.
+    private static func powerOf10(_ exponent: Int) -> Int {
+        guard exponent >= 0 else { return 1 }
+        
+        // Int.max on 64-bit is 9,223,372,036,854,775,807 (about 9.2e18)
+        // 10^18 = 1,000,000,000,000,000,000 is the largest safe power
+        guard exponent <= 18 else { return Int.max }
+        
+        var result = 1
+        for _ in 0..<exponent {
+            result *= 10
+        }
+        return result
     }
 
     /// Calculates a single digit value from bead states.
