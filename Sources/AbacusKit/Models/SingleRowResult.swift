@@ -76,7 +76,9 @@ public struct SingleRowResult: Sendable, Equatable {
     ///
     /// Returns 0 if there are no lanes or if overflow would occur.
     public var value: Int {
-        guard !lanes.isEmpty else { return 0 }
+        guard !lanes.isEmpty else {
+            return 0
+        }
 
         var total = 0
         for (index, lane) in lanes.reversed().enumerated() {
@@ -84,10 +86,14 @@ public struct SingleRowResult: Sendable, Equatable {
             let multiplier = Self.powerOf10(position)
 
             let (product, overflow1) = lane.value.multipliedReportingOverflow(by: multiplier)
-            if overflow1 { return 0 }
+            if overflow1 {
+                return 0
+            }
 
             let (newTotal, overflow2) = total.addingReportingOverflow(product)
-            if overflow2 { return 0 }
+            if overflow2 {
+                return 0
+            }
 
             total = newTotal
         }

@@ -73,7 +73,7 @@ final class SingleRowRecognizerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.laneCount, 3)
-        XCTAssertEqual(result.value, 321)  // 3×100 + 2×10 + 1×1
+        XCTAssertEqual(result.value, 321) // 3×100 + 2×10 + 1×1
         XCTAssertEqual(result.digitValues, [3, 2, 1])
     }
 
@@ -81,7 +81,7 @@ final class SingleRowRecognizerTests: XCTestCase {
         // Create lanes representing [5] at position 2 (hundreds place)
         let digit = SorobanDigit(
             position: 2,
-            upperBead: .lower,  // 5
+            upperBead: .lower, // 5
             lowerBeads: [.upper, .upper, .upper, .upper],
             confidence: 1.0,
             boundingBox: .zero
@@ -140,7 +140,7 @@ final class SingleRowRecognizerTests: XCTestCase {
         let guide = await recognizer.guideRect(in: viewSize)
 
         // Guide should be horizontally centered with inset
-        let expectedInset = viewSize.width * 0.05  // default inset ratio
+        let expectedInset = viewSize.width * 0.05 // default inset ratio
         XCTAssertEqual(guide.origin.x, expectedInset, accuracy: 0.01)
 
         // Guide should fill width minus insets

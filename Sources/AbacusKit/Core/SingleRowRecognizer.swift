@@ -56,10 +56,10 @@ public actor SingleRowRecognizer {
 
     /// Creates a recognizer with default configuration.
     public init() {
-        self.configuration = .default
-        self.interpreter = SorobanInterpreter()
-        self.inferenceEngine = AbacusInferenceEngine()
-        self.isConfigured = true
+        configuration = .default
+        interpreter = SorobanInterpreter()
+        inferenceEngine = AbacusInferenceEngine()
+        isConfigured = true
     }
 
     /// Creates a recognizer with the specified configuration.
@@ -67,9 +67,9 @@ public actor SingleRowRecognizer {
     /// - Parameter configuration: Settings for single-row recognition.
     public init(configuration: SingleRowConfiguration) {
         self.configuration = configuration
-        self.interpreter = SorobanInterpreter()
-        self.inferenceEngine = AbacusInferenceEngine()
-        self.isConfigured = true
+        interpreter = SorobanInterpreter()
+        inferenceEngine = AbacusInferenceEngine()
+        isConfigured = true
     }
 
     // MARK: - Configuration
