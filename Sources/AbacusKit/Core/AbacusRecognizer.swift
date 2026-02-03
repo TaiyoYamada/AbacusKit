@@ -275,9 +275,8 @@ public actor AbacusRecognizer {
         pixelBuffer: CVPixelBuffer,
         consecutiveCount _: Int = 3
     ) async throws -> SorobanResult? {
-        let result = try await recognize(pixelBuffer: pixelBuffer)
         // TODO: Implement temporal stabilization logic
-        return result
+        try await recognize(pixelBuffer: pixelBuffer)
     }
 
     // MARK: - Private

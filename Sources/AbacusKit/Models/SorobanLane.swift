@@ -76,17 +76,23 @@ public struct SorobanLane: Sendable, Equatable {
     /// The position of this lane (0 = rightmost digit).
     ///
     /// Convenience accessor that returns ``SorobanDigit/position``.
-    public var position: Int { digit.position }
+    public var position: Int {
+        digit.position
+    }
 
     /// The numeric value of this lane (0-9).
     ///
     /// Convenience accessor that returns ``SorobanDigit/value``.
-    public var value: Int { digit.value }
+    public var value: Int {
+        digit.value
+    }
 
     /// The confidence score for this lane (0.0-1.0).
     ///
     /// Convenience accessor that returns ``SorobanDigit/confidence``.
-    public var confidence: Float { digit.confidence }
+    public var confidence: Float {
+        digit.confidence
+    }
 }
 
 // MARK: - CellPrediction

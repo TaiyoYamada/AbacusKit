@@ -68,36 +68,40 @@ public struct SorobanInterpreter: Sendable {
             // Calculate multiplier directly from position
             // This is robust against non-contiguous positions
             let multiplier = Self.powerOf10(lane.position)
-            
+
             // Check for overflow during multiplication
             let (addValue, overflow1) = lane.value.multipliedReportingOverflow(by: multiplier)
             if overflow1 {
                 return 0
             }
-            
+
             // Check for overflow during addition
             let (newValue, overflow2) = value.addingReportingOverflow(addValue)
             if overflow2 {
                 return 0
             }
-            
+
             value = newValue
         }
 
         return value
     }
-    
+
     /// Returns 10^exponent as Int, with overflow protection.
     ///
     /// - Parameter exponent: The power to raise 10 to (must be >= 0).
     /// - Returns: 10^exponent, or Int.max if overflow would occur.
     private static func powerOf10(_ exponent: Int) -> Int {
-        guard exponent >= 0 else { return 1 }
-        
+        guard exponent >= 0 else {
+            return 1
+        }
+
         // Int.max on 64-bit is 9,223,372,036,854,775,807 (about 9.2e18)
         // 10^18 = 1,000,000,000,000,000,000 is the largest safe power
-        guard exponent <= 18 else { return Int.max }
-        
+        guard exponent <= 18 else {
+            return Int.max
+        }
+
         var result = 1
         for _ in 0..<exponent {
             result *= 10

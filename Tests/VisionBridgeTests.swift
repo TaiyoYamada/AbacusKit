@@ -28,7 +28,7 @@ final class VisionBridgeTests: XCTestCase {
 
     // MARK: - Error Handling Tests
 
-    func testProcessWithNilBridgeThrowsError() async {
+    func testProcessWithNilBridgeThrowsError() {
         // 無効なブリッジでの処理はエラーになるべき
         // Note: 実際のテストには CVPixelBuffer のモックが必要
     }

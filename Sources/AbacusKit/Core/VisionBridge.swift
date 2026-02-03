@@ -50,7 +50,9 @@ final class VisionBridge: @unchecked Sendable {
     ///
     /// If `false`, the C++ AbacusVision module could not be created,
     /// typically because OpenCV is not available.
-    var isValid: Bool { instance != nil }
+    var isValid: Bool {
+        instance != nil
+    }
 
     // MARK: - Initialization
 

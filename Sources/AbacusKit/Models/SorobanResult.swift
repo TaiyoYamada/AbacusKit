@@ -141,7 +141,9 @@ public struct SorobanResult: Sendable, Equatable {
     /// The number of digits in the recognized value.
     ///
     /// Equivalent to ``laneCount`` and `lanes.count`.
-    public var digitCount: Int { lanes.count }
+    public var digitCount: Int {
+        lanes.count
+    }
 
     /// Returns whether this result meets minimum quality thresholds.
     ///
