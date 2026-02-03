@@ -62,6 +62,12 @@
 /// ### Error Handling
 ///
 /// - ``AbacusError``
+///
+/// ### Single Row Recognition
+///
+/// - ``SingleRowRecognizer``
+/// - ``SingleRowConfiguration``
+/// - ``SingleRowResult``
 
 @_exported import CoreVideo
 @_exported import Foundation
